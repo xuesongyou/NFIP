@@ -1,0 +1,1482 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Residential flood insurance take-up by block group</title>
+<meta name="description" content="Explore NFIP residential flood insurance take-up rates by census block group across the United States.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<style>
+/* ------------------------------------------------------------------
+   Design tokens
+   Ink and paper are cool and neutral so the choropleth carries the color.
+   "Mark" is a highlighter yellow used only to connect related numbers.
+------------------------------------------------------------------- */
+:root{
+  --ink:#15222d;
+  --ink-2:#44545f;
+  --ink-3:#77858f;
+  --line:#dde3e7;
+  --line-2:#eef1f3;
+  --paper:#ffffff;
+  --canvas:#f3f5f7;
+  --water:#1f5fa0;
+  --water-soft:#e4eef8;
+  --mark:#ffe27a;
+  --mark-soft:#fff3c2;
+  --zone:#bcd4ec;       /* uninsured homes in the high-risk zone */
+  --out:#e3e7ea;        /* uninsured homes outside */
+  --insured:#1d5c7a;    /* insured homes */
+  --warn:#8a5a00;
+  --sans:"Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --serif:"Source Serif 4", Georgia, "Times New Roman", serif;
+  --r-s:4px; --r-m:8px; --r-l:12px;
+  --shadow:0 1px 2px rgba(21,34,45,.06), 0 8px 24px rgba(21,34,45,.12);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font-family:var(--sans);color:var(--ink);background:var(--canvas);font-size:14px;line-height:1.45;
+  display:grid;grid-template-rows:auto 1fr;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--water);outline-offset:2px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---------- top bar ---------- */
+.topbar{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;padding:14px 24px 0;background:var(--paper);border-bottom:1px solid var(--line)}
+.brand{display:flex;gap:14px;align-items:center;padding-bottom:12px;min-width:0}
+.brand svg{flex:none}
+.brand h1{font-family:var(--serif);font-weight:600;font-size:22px;line-height:1.15;margin:0;letter-spacing:-.01em}
+.brand p{margin:2px 0 0;color:var(--ink-3);font-size:13px}
+.tabs{display:flex;gap:4px}
+.tabs button{border:0;background:none;padding:10px 14px 12px;font-weight:600;color:var(--ink-3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs button:hover{color:var(--ink)}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--water)}
+
+main{min-height:0;position:relative}
+.tabpanel{display:none;height:100%;min-height:0}
+.tabpanel.active{display:grid}
+
+/* ---------- map tab ---------- */
+#tab-map{grid-template-columns:352px 1fr}
+.sidebar{background:var(--paper);border-right:1px solid var(--line);overflow-y:auto;padding:20px 20px 28px;display:flex;flex-direction:column;gap:22px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-weight:600;font-size:13px}
+.select{appearance:none;width:100%;padding:9px 34px 9px 12px;border:1px solid var(--line);border-radius:var(--r-m);background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%2344545f' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 12px center;cursor:pointer}
+.select:hover:not(:disabled){border-color:#b9c4cc}
+.select:disabled{background-color:var(--line-2);color:var(--ink-3);cursor:not-allowed}
+.filters{display:grid;gap:12px}
+.filters-foot{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.linkbtn{border:0;background:none;padding:0;color:var(--water);font-weight:600;cursor:pointer;font-size:13px}
+.linkbtn:hover{text-decoration:underline}
+.linkbtn:disabled{color:var(--ink-3);cursor:default;text-decoration:none}
+.hint{color:var(--ink-3);font-size:12.5px;margin:0}
+
+.section-title{font-size:13px;font-weight:700;margin:0 0 8px}
+.metrics{display:grid;gap:2px;border:0;margin:0;padding:0}
+.metric{position:relative;display:grid;grid-template-columns:1fr auto;gap:2px 12px;padding:10px 12px 10px 14px;border-radius:var(--r-m);cursor:pointer;border:1px solid transparent}
+.metric:hover{background:var(--canvas)}
+.metric input{position:absolute;opacity:0;pointer-events:none}
+.metric .m-title{font-weight:600;line-height:1.3}
+.metric .m-val{font-weight:700;text-align:right;align-self:start;font-size:15px}
+.metric .m-desc{grid-column:1 / -1;color:var(--ink-3);font-size:12.5px;line-height:1.4}
+.metric .m-ramp{grid-column:1 / -1;height:5px;border-radius:3px;margin-top:6px;display:none}
+.metric::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:3px;border-radius:2px;background:transparent}
+.metric:has(input:checked){background:var(--water-soft);border-color:#cfe0f0}
+.metric:has(input:checked)::before{background:var(--water)}
+.metric:has(input:checked) .m-ramp{display:block}
+.metric:has(input:focus-visible){outline:2px solid var(--water);outline-offset:1px}
+
+.summary{border-top:1px solid var(--line);padding-top:18px}
+.summary h2{font-family:var(--serif);font-size:20px;font-weight:600;margin:0;line-height:1.2}
+.summary .sub{color:var(--ink-3);margin:4px 0 14px;font-size:13px}
+.gap{background:var(--canvas);border-radius:var(--r-m);padding:12px 14px;display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center}
+.gap .gap-n{font-family:var(--serif);font-weight:700;font-size:26px;line-height:1}
+.gap p{margin:0;font-size:13px;color:var(--ink-2)}
+.srcnote{font-size:12px;color:var(--ink-3);margin:0;border-top:1px solid var(--line);padding-top:14px}
+
+.mapwrap{position:relative;min-width:0;min-height:0}
+#map{position:absolute;inset:0}
+
+/* search */
+.search{position:absolute;top:14px;left:14px;z-index:5;width:min(420px, calc(100% - 90px))}
+.search form{display:flex;background:#fff;border-radius:var(--r-m);box-shadow:var(--shadow);border:1px solid var(--line)}
+.search input{flex:1;border:0;background:none;padding:11px 12px 11px 38px;min-width:0;border-radius:var(--r-m)}
+.search input:focus{outline:none}
+.search form:focus-within{outline:2px solid var(--water);outline-offset:1px}
+.search .ico{position:absolute;left:12px;top:12px;pointer-events:none;color:var(--ink-3)}
+.search button[type=submit]{border:0;background:var(--ink);color:#fff;font-weight:600;padding:0 16px;border-radius:0 var(--r-m) var(--r-m) 0;cursor:pointer}
+.search button[type=submit]:hover{background:#26394a}
+.results{list-style:none;margin:6px 0 0;padding:4px;background:#fff;border-radius:var(--r-m);box-shadow:var(--shadow);border:1px solid var(--line);max-height:320px;overflow:auto}
+.results[hidden]{display:none}
+.results button{display:block;width:100%;text-align:left;border:0;background:none;padding:9px 10px;border-radius:var(--r-s);cursor:pointer}
+.results button:hover,.results button:focus-visible{background:var(--canvas)}
+.results .r1{font-weight:600}
+.results .r2{color:var(--ink-3);font-size:12.5px}
+.results .msg{padding:10px;color:var(--ink-2)}
+
+.mapbtns{position:absolute;top:14px;right:14px;z-index:4;display:flex;flex-direction:column;gap:8px;align-items:flex-end}
+.chipbtn{border:1px solid var(--line);background:#fff;border-radius:var(--r-m);padding:8px 12px;font-weight:600;font-size:13px;box-shadow:0 1px 2px rgba(21,34,45,.08);cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+.chipbtn:hover{border-color:#b9c4cc}
+.filters-toggle{display:none}
+
+/* legend */
+.legend{position:absolute;left:14px;bottom:28px;z-index:4;background:rgba(255,255,255,.97);border:1px solid var(--line);border-radius:var(--r-l);box-shadow:var(--shadow);width:292px;padding:14px 14px 10px}
+.legend h3{margin:0;font-size:13.5px;line-height:1.3}
+.legend .lg-sub{color:var(--ink-3);font-size:12px;margin:2px 0 10px}
+.lg-rows{display:grid;gap:1px}
+.lg-row{display:grid;grid-template-columns:16px 1fr 70px 44px;gap:8px;align-items:center;border:0;background:none;padding:3px 4px;border-radius:var(--r-s);text-align:left;cursor:pointer;font-size:12.5px}
+.lg-row:hover,.lg-row.on{background:var(--canvas)}
+.lg-row.on{box-shadow:inset 0 0 0 1px #b9c4cc}
+.lg-sw{width:16px;height:12px;border-radius:2px;box-shadow:inset 0 0 0 1px rgba(21,34,45,.12)}
+.lg-sw.hatch{background:repeating-linear-gradient(45deg,#f1f3f5 0 3px,#9aa6b0 3px 4px)}
+.lg-bar{height:6px;background:var(--line-2);border-radius:3px;overflow:hidden}
+.lg-bar i{display:block;height:100%;background:#9fb0bc;border-radius:3px}
+.lg-n{text-align:right;color:var(--ink-3)}
+.lg-sep{height:1px;background:var(--line);margin:6px 0}
+.seg{display:inline-flex;background:var(--canvas);border-radius:var(--r-m);padding:2px;margin-top:10px;width:100%}
+.seg button{flex:1;border:0;background:none;padding:5px 8px;border-radius:6px;font-size:12px;font-weight:600;color:var(--ink-3);cursor:pointer}
+.seg button[aria-pressed="true"]{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(21,34,45,.12)}
+.legend-min{display:none}
+
+/* ---------- block group card ---------- */
+.card{position:absolute;left:0;top:0;z-index:6;width:352px;max-width:calc(100% - 28px);background:#fff;border-radius:var(--r-l);box-shadow:var(--shadow);border:1px solid var(--line);pointer-events:none;overflow:hidden}
+.card[hidden]{display:none}
+.card.pinned{pointer-events:auto;left:auto;right:14px;top:14px;transform:none!important;max-height:calc(100% - 28px);overflow-y:auto}
+.card-head{display:flex;justify-content:space-between;gap:10px;padding:14px 16px 10px}
+.card-place{font-weight:700;font-size:14.5px;line-height:1.25}
+.card-id{color:var(--ink-3);font-size:12px;margin-top:2px}
+.card-x{display:none;border:0;background:var(--canvas);width:28px;height:28px;border-radius:50%;cursor:pointer;flex:none;font-size:16px;line-height:1}
+.card.pinned .card-x{display:block}
+.card-hint{color:var(--ink-3);font-size:11.5px;padding:8px 16px 12px;border-top:1px solid var(--line-2)}
+.card.pinned .card-hint{display:none}
+.card-actions{display:none;gap:14px;padding:10px 16px 14px;border-top:1px solid var(--line-2)}
+.card.pinned .card-actions{display:flex}
+.card-actions .linkbtn{white-space:nowrap}
+
+.hero{padding:2px 16px 14px}
+.hero-label{font-size:12.5px;color:var(--ink-2);font-weight:600;display:flex;align-items:center;gap:6px}
+.hero-sw{width:10px;height:10px;border-radius:2px;box-shadow:inset 0 0 0 1px rgba(21,34,45,.15)}
+.hero-val{font-family:var(--serif);font-weight:700;font-size:40px;line-height:1.05;letter-spacing:-.01em;margin:2px 0 4px}
+.hero-sent{margin:0;font-size:13px;color:var(--ink-2)}
+.hero-note{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start;background:var(--canvas);border-radius:var(--r-m);padding:10px 12px;margin:0 16px 12px;font-size:12.5px;color:var(--ink-2)}
+.hero-note strong{color:var(--ink)}
+mark,.hl-1,.hl-2{color:inherit}
+mark{background:linear-gradient(transparent 14%,var(--mark) 14%,var(--mark) 90%,transparent 90%);padding:0 2px;font-weight:700}
+
+.cmp{margin-top:12px;padding:16px 0 18px;position:relative}
+.cmp-track{position:relative;height:8px;border-radius:4px;background:var(--line-2)}
+.cmp-fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+.cmp-dot{position:absolute;top:50%;width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px var(--ink);transform:translate(-50%,-50%)}
+.cmp-tick{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ink);transform:translateX(-1px)}
+.cmp-lab{position:absolute;font-size:11px;color:var(--ink-2);white-space:nowrap}
+.cmp-lab.up{bottom:calc(100% + 4px)}
+.cmp-lab.down{top:calc(100% + 5px)}
+.cmp-lab.l{transform:translateX(-2px)}
+.cmp-lab.c{transform:translateX(-50%)}
+.cmp-lab.r{transform:translateX(calc(-100% + 2px))}
+
+.split-wrap{padding:0 16px 12px}
+.split-cap{display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink-3);margin-bottom:5px}
+.split{display:flex;height:18px;gap:2px}
+.split .s{position:relative;border-radius:3px;overflow:hidden;min-width:4px}
+.split .s i{position:absolute;left:0;top:0;bottom:0;background:var(--insured)}
+.split .s-z{background:var(--zone)}
+.split .s-o{background:var(--out)}
+.split .s.focus{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--mark)}
+.split-key{display:flex;gap:14px;font-size:11.5px;color:var(--ink-3);margin-top:7px;flex-wrap:wrap}
+.split-key span{display:inline-flex;align-items:center;gap:5px}
+.split-key b{width:10px;height:10px;border-radius:2px;display:inline-block}
+
+.bt{width:calc(100% - 32px);margin:0 16px 12px;border-collapse:collapse;font-size:12.5px}
+.bt th,.bt td{padding:5px 4px;text-align:right;border-bottom:1px solid var(--line-2)}
+.bt th:first-child,.bt td:first-child{text-align:left;padding-left:0}
+.bt thead th{font-weight:600;color:var(--ink-3);font-size:11.5px;vertical-align:bottom;line-height:1.2}
+.bt thead th.col-on{color:var(--ink)}
+.bt tbody th{font-weight:500;color:var(--ink-2)}
+.bt td{color:var(--ink-2)}
+.bt td.col-on{background:rgba(255,226,122,.12)}
+.bt .hl-1{background:linear-gradient(transparent 10%,var(--mark) 10%,var(--mark) 92%,transparent 92%);color:var(--ink);font-weight:800;border-radius:2px}
+.bt .hl-2{box-shadow:inset 0 -.5em 0 var(--mark-soft);color:var(--ink);font-weight:700}
+.bt .muted{color:var(--ink-3);font-weight:400}
+.bt tr:last-child th,.bt tr:last-child td{border-bottom:0}
+
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:10px 16px;border-radius:var(--r-m);font-weight:600;opacity:0;transition:.2s;z-index:50;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.loader{position:absolute;inset:0;z-index:8;display:grid;place-items:center;background:rgba(243,245,247,.6);backdrop-filter:blur(2px)}
+.loader[hidden]{display:none}
+.loader-box{background:#fff;border-radius:var(--r-l);box-shadow:var(--shadow);padding:18px 22px;display:flex;gap:14px;align-items:center;max-width:420px}
+.spin{width:22px;height:22px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--water);animation:spin .8s linear infinite;flex:none}
+.loader-box.err .spin{display:none}
+.loader-box.err{border-left:4px solid #b3261e}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loader-t{font-weight:600}
+.loader-s{color:var(--ink-3);font-size:12.5px}
+
+.pin{width:18px;height:18px;border-radius:50%;background:var(--ink);border:3px solid #fff;box-shadow:0 0 0 1px var(--ink),0 2px 6px rgba(0,0,0,.3)}
+
+.maplibregl-ctrl-group{border-radius:var(--r-m)!important;box-shadow:0 1px 2px rgba(21,34,45,.12)!important}
+.maplibregl-ctrl-attrib{font-size:11px}
+
+/* ---------- data tab ---------- */
+#tab-data,#tab-method{overflow-y:auto;background:var(--paper)}
+#tab-data.active,#tab-method.active{display:block}
+.data-wrap{max-width:1320px;margin:0 auto;padding:24px}
+.data-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:16px}
+.data-head h2{font-family:var(--serif);font-weight:600;font-size:24px;margin:0;line-height:1.2}
+.data-head p{margin:4px 0 0;color:var(--ink-3)}
+.data-filters{display:flex;gap:10px;flex-wrap:wrap}
+.data-filters .select{width:220px}
+.data-bar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.data-bar .left{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.textin{padding:8px 12px;border:1px solid var(--line);border-radius:var(--r-m);width:260px}
+.chk{display:inline-flex;gap:8px;align-items:center;color:var(--ink-2);font-size:13px;cursor:pointer}
+.chk input{accent-color:var(--water);width:16px;height:16px}
+.btn{border:1px solid var(--ink);background:var(--ink);color:#fff;border-radius:var(--r-m);padding:8px 14px;font-weight:600;cursor:pointer;display:inline-flex;gap:8px;align-items:center}
+.btn:hover{background:#26394a}
+.btn.ghost{background:#fff;color:var(--ink);border-color:var(--line)}
+.btn.ghost:hover{border-color:#b9c4cc;background:#fff}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.tbl-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r-m)}
+table.dt{border-collapse:collapse;width:100%;min-width:1100px;font-size:13px}
+.dt th,.dt td{padding:9px 12px;border-bottom:1px solid var(--line-2);text-align:right;white-space:nowrap}
+.dt th:first-child,.dt td:first-child,.dt th.tl,.dt td.tl{text-align:left}
+.dt thead th{position:sticky;top:0;background:#f8f9fa;font-weight:600;vertical-align:bottom;border-bottom:1px solid var(--line);white-space:normal;min-width:96px}
+.dt thead button{border:0;background:none;padding:0;font-weight:600;cursor:pointer;text-align:inherit;display:block;width:100%}
+.dt thead .raw{display:block;font-weight:400;color:var(--ink-3);font-size:11px;margin-top:2px;word-break:break-all}
+.dt thead .arr{color:var(--water)}
+.dt tbody tr{cursor:pointer}
+.dt tbody tr:hover{background:var(--water-soft)}
+.dt .chip{display:inline-block;padding:1px 7px;border-radius:10px;background:var(--line-2);color:var(--ink-3);font-size:11.5px}
+.dt .na{color:var(--ink-3)}
+.pager{display:flex;justify-content:space-between;align-items:center;padding:12px 0;color:var(--ink-3);gap:12px;flex-wrap:wrap}
+.pager .pbtns{display:flex;gap:6px}
+.empty{padding:48px 24px;text-align:center;color:var(--ink-2)}
+
+/* ---------- methodology ---------- */
+.doc{max-width:760px;margin:0 auto;padding:40px 24px 80px;font-family:var(--serif);font-size:17px;line-height:1.65}
+.doc h2{font-family:var(--serif);font-size:32px;line-height:1.15;margin:0 0 8px;font-weight:600;letter-spacing:-.01em}
+.doc .lede{font-size:19px;color:var(--ink-2);margin:0 0 32px}
+.doc h3{font-family:var(--sans);font-size:17px;margin:36px 0 8px}
+.doc p,.doc li{max-width:68ch}
+.doc code{font-size:.85em;background:var(--canvas);padding:1px 5px;border-radius:3px}
+.doc .formula{font-family:var(--sans);font-size:14.5px;background:var(--canvas);border-radius:var(--r-m);padding:14px 16px;line-height:1.8}
+.doc .todo{background:var(--mark-soft);border-radius:3px;padding:0 4px;font-family:var(--sans);font-size:.82em;color:var(--warn)}
+.deftable-wrap{overflow-x:auto;margin:12px -24px 0;padding:0 24px}
+table.def{font-family:var(--sans);font-size:13.5px;line-height:1.45;border-collapse:collapse;width:100%;min-width:680px}
+.def th,.def td{text-align:left;vertical-align:top;padding:10px 12px 10px 0;border-bottom:1px solid var(--line)}
+.def thead th{font-weight:700;border-bottom:2px solid var(--ink)}
+.def td:first-child{font-weight:600;white-space:nowrap}
+.def .plain{display:block;font-weight:400;color:var(--ink-3);font-size:12.5px}
+
+/* ---------- responsive ---------- */
+@media (max-width:980px){
+  #tab-map{grid-template-columns:1fr}
+  .sidebar{position:absolute;inset:0 auto 0 0;width:min(360px,92vw);z-index:20;box-shadow:var(--shadow);transform:translateX(-102%);transition:transform .25s}
+  body.filters-open .sidebar{transform:none}
+  .filters-toggle{display:inline-flex}
+  .legend{width:260px}
+  .brand p{display:none}
+}
+@media (max-width:640px){
+  .topbar{flex-direction:column;align-items:stretch;gap:4px;padding:10px 14px 0}
+  .brand{padding-bottom:4px}
+  .brand h1{font-size:18px}
+  .search{width:calc(100% - 28px);top:12px}
+  .mapbtns{top:64px;flex-direction:row}
+  .maplibregl-ctrl-bottom-right .maplibregl-ctrl-group{display:none}
+  .legend{left:10px;right:10px;bottom:24px;width:auto}
+  .legend.collapsed .legend-full{display:none}
+  .legend.collapsed .legend-min{display:flex}
+  .legend-min{justify-content:space-between;align-items:center;gap:8px;font-weight:600;font-size:13px}
+  .card.pinned{left:0;right:0;top:auto;bottom:0;width:100%;max-width:100%;border-radius:var(--r-l) var(--r-l) 0 0;max-height:70%}
+  .data-filters .select,.textin{width:100%}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition:none!important;animation-duration:.01ms!important}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <svg width="36" height="36" viewBox="0 0 36 36" aria-hidden="true">
+      <rect width="36" height="36" rx="8" fill="#15222d"/>
+      <path d="M9 18.5 18 11l9 7.5V25H9z" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M5 27.5c2.2 0 2.2-1.6 4.4-1.6s2.2 1.6 4.4 1.6 2.2-1.6 4.4-1.6 2.2 1.6 4.4 1.6 2.2-1.6 4.4-1.6 2.2 1.6 3.9 1.6" fill="none" stroke="#7fc4d6" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+    <div>
+      <h1 id="appTitle">Residential flood insurance take-up</h1>
+      <p id="appSub">Share of homes with an active NFIP policy, by census block group</p>
+    </div>
+  </div>
+  <nav class="tabs" role="tablist" aria-label="Views">
+    <button role="tab" id="t-map" aria-controls="tab-map" aria-selected="true" data-tab="map">Map</button>
+    <button role="tab" id="t-data" aria-controls="tab-data" aria-selected="false" data-tab="data" tabindex="-1">Data</button>
+    <button role="tab" id="t-method" aria-controls="tab-method" aria-selected="false" data-tab="method" tabindex="-1">Methodology</button>
+  </nav>
+</header>
+
+<main>
+  <!-- ================= MAP ================= -->
+  <section id="tab-map" class="tabpanel active" role="tabpanel" aria-labelledby="t-map">
+    <aside class="sidebar" id="sidebar" aria-label="Filters and map layers">
+      <div class="filters">
+        <div class="field">
+          <label for="stateSel">State</label>
+          <select id="stateSel" class="select js-state"><option value="">All states</option></select>
+        </div>
+        <div class="field">
+          <label for="countySel">County</label>
+          <select id="countySel" class="select js-county" disabled><option value="">Pick a state first</option></select>
+        </div>
+        <div class="filters-foot">
+          <p class="hint" id="filterHint">Pick a state to see its block groups.</p>
+          <button class="linkbtn" id="resetBtn" disabled>Clear</button>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="section-title" id="metricsLbl">Color the map by</h2>
+        <div class="metrics" id="metrics" role="radiogroup" aria-labelledby="metricsLbl"></div>
+      </div>
+
+      <div class="summary" id="summary" aria-live="polite"></div>
+
+      <p class="srcnote">Sources: FEMA OpenFEMA NFIP Redacted Policies (v3), USACE National Structure Inventory, FEMA National Flood Hazard Layer. <button class="linkbtn js-goto-method">How these numbers are made</button></p>
+    </aside>
+
+    <div class="mapwrap" id="mapwrap">
+      <div id="map" aria-label="Map of flood insurance take-up by block group"></div>
+
+      <div class="search">
+        <form id="searchForm" role="search">
+          <svg class="ico" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m11 11 3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <label for="searchIn" class="sr-only">Search for an address or place</label>
+          <input id="searchIn" type="search" placeholder="Search an address, city, or ZIP code" autocomplete="off">
+          <button type="submit">Search</button>
+        </form>
+        <ul class="results" id="results" hidden></ul>
+      </div>
+
+      <div class="mapbtns">
+        <button class="chipbtn filters-toggle" id="filtersToggle" aria-controls="sidebar" aria-expanded="false">
+          <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M1 3h12M3 7h8M5 11h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Filters
+        </button>
+        <button class="chipbtn" id="shareBtn" title="Copy a link to this view">
+          <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M5.5 8.5l3-3M6 3.5l1-1a2.5 2.5 0 0 1 3.5 3.5l-1 1M8 10.5l-1 1A2.5 2.5 0 0 1 3.5 8l1-1" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Copy link
+        </button>
+      </div>
+
+      <div class="legend" id="legend">
+        <button class="legend-min linkbtn" id="legendExpand" style="width:100%;color:var(--ink)">
+          <span id="legendMinTitle">Legend</span><span aria-hidden="true">Show</span>
+        </button>
+        <div class="legend-full">
+          <div style="display:flex;justify-content:space-between;gap:8px">
+            <h3 id="lgTitle"></h3>
+            <button class="linkbtn" id="legendCollapse" style="display:none">Hide</button>
+          </div>
+          <p class="lg-sub" id="lgSub"></p>
+          <div class="lg-rows" id="lgRows"></div>
+          <div class="seg" role="group" aria-label="Color scale">
+            <button id="scaleFixed" aria-pressed="true" title="The same color breaks everywhere, so places are directly comparable">National scale</button>
+            <button id="scaleLocal" aria-pressed="false" title="Color breaks fitted to the selected area, to show local differences">Local scale</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" id="card" hidden role="dialog" aria-label="Block group details"></div>
+
+      <div class="loader" id="loader">
+        <div class="loader-box" id="loaderBox"><div class="spin"></div><div><div class="loader-t" id="loaderT">Loading data</div><div class="loader-s" id="loaderS">Starting up</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= DATA ================= -->
+  <section id="tab-data" class="tabpanel" role="tabpanel" aria-labelledby="t-data">
+    <div class="data-wrap">
+      <div class="data-head">
+        <div>
+          <h2 id="dataTitle">All states</h2>
+          <p id="dataMeta"></p>
+        </div>
+        <div class="data-filters">
+          <label class="sr-only" for="stateSel2">State</label>
+          <select id="stateSel2" class="select js-state"><option value="">All states</option></select>
+          <label class="sr-only" for="countySel2">County</label>
+          <select id="countySel2" class="select js-county" disabled><option value="">Pick a state first</option></select>
+        </div>
+      </div>
+      <div class="data-bar">
+        <div class="left">
+          <label class="sr-only" for="tblSearch">Filter rows</label>
+          <input class="textin" id="tblSearch" type="search" placeholder="Filter by name or FIPS code">
+          <label class="chk"><input type="checkbox" id="maskChk" checked> Hide rates where a block group has fewer than <span class="js-min">5</span> homes</label>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn" id="dlCsv"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 1.5v8M3.5 6 7 9.5 10.5 6M2 12.5h10" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>Download CSV</button>
+          <button class="btn ghost" id="dlGeo" title="Pick a state first">Download GeoJSON</button>
+        </div>
+      </div>
+      <div class="tbl-scroll"><table class="dt" id="dataTable"></table></div>
+      <div class="pager" id="pager"></div>
+    </div>
+  </section>
+
+  <!-- ================= METHODOLOGY ================= -->
+  <section id="tab-method" class="tabpanel" role="tabpanel" aria-labelledby="t-method">
+    <article class="doc">
+      <h2>Methodology</h2>
+      <p class="lede">How the take-up rates on this dashboard are built, what each number means, and where the limits are.</p>
+
+      <!-- EDIT: Replace or expand any section below. Text marked with a yellow tag is a placeholder. -->
+
+      <h3>What the dashboard shows</h3>
+      <p>For every census block group in the 50 states and the District of Columbia, the dashboard compares the number of residential structures with the number of active National Flood Insurance Program (NFIP) residential contracts. It splits both counts by whether a structure sits inside the Special Flood Hazard Area (SFHA), the FEMA-mapped floodplain with a 1% chance of flooding in any given year. Throughout the dashboard, "homes" means residential structures and "high-risk flood zone" means the SFHA.</p>
+
+      <h3>Data sources</h3>
+      <ul>
+        <li><strong>NFIP policies:</strong> OpenFEMA dataset <em>FIMA NFIP Redacted Policies, v3</em>, policies in force as of <span class="js-asof">June 2026</span>. <span class="todo">Add download date and the filters you applied (e.g., residential occupancy types, active policy dates).</span></li>
+        <li><strong>Residential structures:</strong> USACE National Structure Inventory (NSI). <span class="todo">Add NSI version and how residential occupancy was defined.</span></li>
+        <li><strong>Flood zones:</strong> FEMA National Flood Hazard Layer (NFHL). <span class="todo">Add extraction date and which zones count as SFHA (e.g., A, AE, AH, AO, AR, A99, V, VE).</span></li>
+        <li><strong>Boundaries:</strong> Census block groups. <span class="todo">Add vintage (2010 or 2020) and source (TIGER/Line or cartographic boundary files).</span></li>
+      </ul>
+
+      <h3>How the rates are calculated</h3>
+      <div class="formula">
+        Share of homes in the high-risk zone = homes in SFHA ÷ all homes<br>
+        Insured rate, all homes = active NFIP contracts ÷ all homes<br>
+        Insured rate in the high-risk zone = contracts in SFHA ÷ homes in SFHA<br>
+        Insured rate outside the zone = contracts outside SFHA ÷ homes outside SFHA
+      </div>
+      <p>County, state, and national figures on the dashboard are calculated by summing counts across block groups and then dividing, not by averaging block group percentages. This weights each area by its number of homes.</p>
+      <p><span class="todo">Describe how policies were assigned to block groups and to inside/outside the SFHA (e.g., using the policy's census block group field and flood zone field).</span></p>
+
+      <h3>Small numbers</h3>
+      <p>Percentages are hidden for block groups with fewer than <span class="js-min">5</span> residential structures, because one policy more or less would swing the rate dramatically. These block groups appear on the map with a gray hatch pattern. Their counts are still shown. The insured rate in the high-risk zone is marked "not applicable" where a block group has no homes in the SFHA.</p>
+
+      <h3>Reading the numbers with care</h3>
+      <ul>
+        <li>A contract is not always one home. A single policy on a multi-unit building can cover several residences, and a structure can carry more than one policy, so rates can occasionally exceed 100%.</li>
+        <li>Structure counts in the NSI are modeled estimates rather than a parcel-by-parcel census.</li>
+        <li>A low share of homes in the high-risk zone can reflect areas FEMA has not mapped, not only low flood risk. Many damaging floods happen outside the SFHA.</li>
+        <li>The data is a snapshot of policies in force at one point in time. Take-up changes as policies lapse and renew.</li>
+        <li><span class="todo">Add any other caveats, such as geocoding precision of the redacted policy data.</span></li>
+      </ul>
+
+      <h3>Variable definitions</h3>
+      <div class="deftable-wrap">
+        <table class="def">
+          <thead><tr><th>Variable</th><th>Definition</th><th>Data source</th></tr></thead>
+          <tbody id="defBody"></tbody>
+        </table>
+      </div>
+
+      <h3>Suggested citation</h3>
+      <p><span class="todo">Your name or organization (2026). Residential flood insurance take-up by census block group. Data as of June 2026. URL.</span></p>
+
+      <h3>Contact</h3>
+      <p><span class="todo">Add an email or link for questions and corrections.</span></p>
+    </article>
+  </section>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+<script>
+/* ==================================================================
+   CONFIGURATION: edit paths here to match your repo layout
+================================================================== */
+const CONFIG = {
+  csvUrl: 'NFIP_Residential_Takeup_202606.csv',
+  geojsonUrl: st => `${st}_bg.json`,          // e.g. st => `data/geojson/${st}_bg.json`
+  statesTopoUrl: 'https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json', // national overview only; the dashboard works without it
+  dataAsOf: 'June 2026',
+  minHomes: 5,                                  // suppress % variables when totalResStructures < this
+  fileTag: '202606'
+};
+
+/* ==================================================================
+   Reference data
+================================================================== */
+const STATES = [["AL","01","Alabama"],["AK","02","Alaska"],["AZ","04","Arizona"],["AR","05","Arkansas"],["CA","06","California"],["CO","08","Colorado"],["CT","09","Connecticut"],["DE","10","Delaware"],["DC","11","District of Columbia"],["FL","12","Florida"],["GA","13","Georgia"],["HI","15","Hawaii"],["ID","16","Idaho"],["IL","17","Illinois"],["IN","18","Indiana"],["IA","19","Iowa"],["KS","20","Kansas"],["KY","21","Kentucky"],["LA","22","Louisiana"],["ME","23","Maine"],["MD","24","Maryland"],["MA","25","Massachusetts"],["MI","26","Michigan"],["MN","27","Minnesota"],["MS","28","Mississippi"],["MO","29","Missouri"],["MT","30","Montana"],["NE","31","Nebraska"],["NV","32","Nevada"],["NH","33","New Hampshire"],["NJ","34","New Jersey"],["NM","35","New Mexico"],["NY","36","New York"],["NC","37","North Carolina"],["ND","38","North Dakota"],["OH","39","Ohio"],["OK","40","Oklahoma"],["OR","41","Oregon"],["PA","42","Pennsylvania"],["RI","44","Rhode Island"],["SC","45","South Carolina"],["SD","46","South Dakota"],["TN","47","Tennessee"],["TX","48","Texas"],["UT","49","Utah"],["VT","50","Vermont"],["VA","51","Virginia"],["WA","53","Washington"],["WV","54","West Virginia"],["WI","55","Wisconsin"],["WY","56","Wyoming"]];
+const ST = {}; const FIPS2ST = {}; const NAME2ST = {};
+STATES.forEach(([a,f,n]) => { ST[a] = {fips:f, name:n}; FIPS2ST[f] = a; NAME2ST[n.toLowerCase()] = a; });
+
+const EPS = 1e-9;
+const RAMPS = {
+  water:   ['#f1f3f4','#dbe8f4','#b3cfe8','#7fafd8','#4f8bc2','#2a65a3','#15406f'],
+  cover:   ['#f1f3f4','#e8efb6','#bfe0a1','#7fc6a4','#43a4a2','#257a93','#1c4d74']
+};
+const C = { missing:'#e9ecee', na:'#cfd5da', sup:'#f3f5f6' };
+
+const METRIC_ORDER = ['resStructuresRateSfha','resPenetrationRate','resPenetrationRateSfha','resPenetrationRateNonSfha'];
+const METRICS = {
+  resStructuresRateSfha: {
+    title:'Homes in the high-risk flood zone',
+    legend:'Share of homes in the high-risk flood zone',
+    desc:'Share of homes inside FEMA’s 1%-annual-chance floodplain (SFHA).',
+    ramp:'water', breaks:[EPS,.05,.10,.25,.50,.75],
+    primary:'share.z', secondary:['homes.z','homes.a'], focusSeg:'z'
+  },
+  resPenetrationRate: {
+    title:'Homes with flood insurance',
+    legend:'Share of all homes with an NFIP policy',
+    desc:'Share of all homes with an active NFIP policy.',
+    ramp:'cover', breaks:[EPS,.01,.025,.05,.10,.20],
+    primary:'rate.a', secondary:['pol.a','homes.a'], focusSeg:'a'
+  },
+  resPenetrationRateSfha: {
+    title:'Insured in the high-risk zone',
+    legend:'Share of homes in the high-risk zone with an NFIP policy',
+    desc:'Share of homes inside the floodplain with an NFIP policy. Most federally backed mortgages here require one.',
+    ramp:'cover', breaks:[EPS,.10,.20,.30,.50,.75],
+    primary:'rate.z', secondary:['pol.z','homes.z'], focusSeg:'z'
+  },
+  resPenetrationRateNonSfha: {
+    title:'Insured outside the high-risk zone',
+    legend:'Share of homes outside the high-risk zone with an NFIP policy',
+    desc:'Share of homes outside the mapped floodplain with an NFIP policy.',
+    ramp:'cover', breaks:[EPS,.005,.01,.02,.05,.10],
+    primary:'rate.o', secondary:['pol.o','homes.o'], focusSeg:'o'
+  }
+};
+const NUMS = ['resStructuresRateSfha','resPenetrationRate','resPenetrationRateSfha','resPenetrationRateNonSfha','totalResStructures','totalResStructuresSfha','resContractsInForce','resContractsInForceSfha','resContractsInForceNonSfha'];
+const RATE_VARS = METRIC_ORDER;
+
+const DEFS = [
+  ['fipsCode','12-digit census block group FIPS code (e.g., 010010201001)','','Block group ID'],
+  ['CountyfipsCode','5-digit county FIPS code (e.g., 01001)','','County ID'],
+  ['state','State name (e.g., Alabama)','',''],
+  ['county','County name (e.g., Autauga County)','',''],
+  ['resStructuresRateSfha','Percent of residential structures located inside the Special Flood Hazard Area (the FEMA-mapped 1%-annual-chance floodplain); value range 0–1','Residential structures from the National Structure Inventory (NSI), overlaid with the FEMA National Flood Hazard Layer (NFHL)','Homes in the high-risk flood zone'],
+  ['resPenetrationRate','Percent of all residential structures with an active NFIP contract; value range 0–1','FEMA National Flood Insurance Program (NFIP) policy data; NSI structure counts','Homes with flood insurance'],
+  ['resPenetrationRateSfha','Percent of residential structures inside the SFHA with an active NFIP contract; value range 0–1. Shown as N/A where a block group has zero residential structures in the SFHA.','NFIP policy data from OpenFEMA Dataset: NFIP Redacted Policies – v3; residential structures from the NSI, overlaid with the NFHL','Insured in the high-risk zone'],
+  ['resPenetrationRateNonSfha','Percent of residential structures outside the SFHA with an active NFIP contract; value range 0–1','NFIP policy data from OpenFEMA Dataset: NFIP Redacted Policies – v3; residential structures from the NSI, overlaid with the NFHL','Insured outside the high-risk zone'],
+  ['totalResStructures','Number of residential structures','National Structure Inventory (NSI)','Homes'],
+  ['totalResStructuresSfha','Number of residential structures located inside the Special Flood Hazard Area (the FEMA-mapped 1%-annual-chance floodplain)','Residential structures from the NSI, overlaid with the NFHL','Homes in the high-risk zone'],
+  ['resContractsInForce','Number of active NFIP residential contracts','NFIP policy data from OpenFEMA Dataset: NFIP Redacted Policies – v3','NFIP policies'],
+  ['resContractsInForceSfha','Number of active NFIP residential contracts inside the SFHA','NFIP policy data from OpenFEMA Dataset: NFIP Redacted Policies – v3','Policies in the high-risk zone'],
+  ['resContractsInForceNonSfha','Number of active NFIP residential contracts outside the SFHA','NFIP policy data from OpenFEMA Dataset: NFIP Redacted Policies – v3','Policies outside the high-risk zone']
+];
+
+/* ==================================================================
+   State
+================================================================== */
+const S = {
+  ready:false, rows:new Map(), byState:new Map(), countiesByState:new Map(),
+  stateAgg:new Map(), countyAgg:new Map(), natAgg:null, geo:new Map(),
+  st:null, county:null, metric:'resPenetrationRate', scale:'fixed', breaks:[],
+  pinned:null, hover:null, legendHover:null, legendLock:null, tab:'map', marker:null, statesFC:null
+};
+const T = { key:null, dir:1, page:0, size:50, q:'' };
+
+/* ==================================================================
+   Helpers
+================================================================== */
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtInt = n => (n == null || !isFinite(n)) ? '—' : Math.round(n).toLocaleString('en-US');
+const compact = new Intl.NumberFormat('en-US', {notation:'compact', maximumFractionDigits:1});
+const fmtCompact = n => n == null ? '—' : (n < 10000 ? fmtInt(n) : compact.format(n));
+function fmtPct(v){
+  if (v == null || !isFinite(v)) return '—';
+  const p = v * 100;
+  if (p === 0) return '0%';
+  if (p < 0.1) return '<0.1%';
+  return (p >= 10 ? p.toFixed(0) : p.toFixed(1)) + '%';
+}
+function fmtPctFine(v){ // for detail cards
+  if (v == null || !isFinite(v)) return '—';
+  const p = v * 100;
+  if (p === 0) return '0%';
+  if (p < 0.1) return '<0.1%';
+  return p.toFixed(1) + '%';
+}
+function fmtBreak(v){ const p = v * 100; return (+p.toPrecision(3)).toString() + '%'; }
+function num(v){
+  if (v == null) return null;
+  const s = String(v).trim();
+  if (s === '' || /^(n\/?a|nan|null|none)$/i.test(s)) return null;
+  const n = +s; return Number.isFinite(n) ? n : null;
+}
+function fmtGeoid(id){ return `${id.slice(0,2)} ${id.slice(2,5)} ${id.slice(5,11)} ${id.slice(11)}`; }
+function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(()=>t.classList.remove('show'), 2200); }
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const dur = ms => reduceMotion ? 0 : ms;
+
+async function fetchText(url, onProgress){
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Couldn’t load ${url} (HTTP ${res.status}). Check the path in CONFIG.`);
+  if (!res.body || !res.body.getReader) return res.text();
+  const reader = res.body.getReader(); const chunks = []; let got = 0;
+  for (;;) { const {done, value} = await reader.read(); if (done) break; chunks.push(value); got += value.length; onProgress && onProgress(got); }
+  return new Blob(chunks).text();
+}
+
+function showLoader(t, s){ $('#loader').hidden = false; $('#loaderBox').classList.remove('err'); $('#loaderT').textContent = t; $('#loaderS').textContent = s || ''; }
+function loaderErr(t, s){ $('#loader').hidden = false; $('#loaderBox').classList.add('err'); $('#loaderT').textContent = t; $('#loaderS').textContent = s || ''; }
+function hideLoader(){ $('#loader').hidden = true; }
+
+/* ---------- aggregation ---------- */
+const newAgg = () => ({n:0,total:0,sfha:0,pol:0,polS:0,polN:0});
+function addAgg(a, r){
+  a.n++; a.total += r.totalResStructures || 0; a.sfha += r.totalResStructuresSfha || 0;
+  a.pol += r.resContractsInForce || 0; a.polS += r.resContractsInForceSfha || 0; a.polN += r.resContractsInForceNonSfha || 0;
+}
+function aggRates(a){
+  if (!a) return {};
+  const out = a.total - a.sfha;
+  return {
+    resStructuresRateSfha: a.total > 0 ? a.sfha / a.total : null,
+    resPenetrationRate: a.total > 0 ? a.pol / a.total : null,
+    resPenetrationRateSfha: a.sfha > 0 ? a.polS / a.sfha : null,
+    resPenetrationRateNonSfha: out > 0 ? a.polN / out : null
+  };
+}
+function aggAsRow(a){
+  return { n:a.n, totalResStructures:a.total, totalResStructuresSfha:a.sfha, resContractsInForce:a.pol,
+    resContractsInForceSfha:a.polS, resContractsInForceNonSfha:a.polN, ...aggRates(a), sup:false };
+}
+
+/* ---------- geometry ---------- */
+function bboxOf(geom, shiftAK){
+  const b = [Infinity, Infinity, -Infinity, -Infinity];
+  const walk = c => {
+    if (typeof c[0] === 'number') {
+      let x = c[0]; if (shiftAK && x > 0) x -= 360;
+      if (x < b[0]) b[0] = x; if (x > b[2]) b[2] = x; if (c[1] < b[1]) b[1] = c[1]; if (c[1] > b[3]) b[3] = c[1];
+    } else c.forEach(walk);
+  };
+  if (geom && geom.coordinates) walk(geom.coordinates);
+  return b;
+}
+const extend = (a, b) => { a[0]=Math.min(a[0],b[0]); a[1]=Math.min(a[1],b[1]); a[2]=Math.max(a[2],b[2]); a[3]=Math.max(a[3],b[3]); return a; };
+function pipRing(x, y, ring){
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const xi = ring[i][0], yi = ring[i][1], xj = ring[j][0], yj = ring[j][1];
+    if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) inside = !inside;
+  }
+  return inside;
+}
+function inPoly(x, y, poly){ if (!pipRing(x, y, poly[0])) return false; for (let k = 1; k < poly.length; k++) if (pipRing(x, y, poly[k])) return false; return true; }
+function findBG(g, lon, lat){
+  for (const f of g.fc.features) {
+    const bb = g.raw.get(f.properties.GEOID);
+    if (!bb || lon < bb[0] || lon > bb[2] || lat < bb[1] || lat > bb[3]) continue;
+    const gm = f.geometry;
+    if (gm.type === 'Polygon' ? inPoly(lon, lat, gm.coordinates) : gm.type === 'MultiPolygon' && gm.coordinates.some(p => inPoly(lon, lat, p))) return f.properties.GEOID;
+  }
+  return null;
+}
+
+/* ==================================================================
+   Color scale
+================================================================== */
+function unitsForScale(){
+  // returns [{v, sup}] for the current view level, for the current metric
+  const m = S.metric;
+  if (!S.st) return STATES.map(([,f]) => ({v: aggRates(S.stateAgg.get(f))[m] ?? null, sup:false}));
+  return currentRows().map(r => ({v: r[m], sup: r.sup}));
+}
+function niceRound(v){ return +v.toPrecision(2); }
+function computeBreaks(){
+  const M = METRICS[S.metric];
+  if (S.scale === 'fixed') return M.breaks;
+  const vals = unitsForScale().filter(u => !u.sup && u.v != null && u.v > 0).map(u => u.v).sort((a,b) => a-b);
+  if (vals.length < 12) return M.breaks;
+  const out = [EPS];
+  for (let i = 1; i < 6; i++) { const q = niceRound(vals[Math.floor(i * vals.length / 6)]); if (q > out[out.length-1]) out.push(q); }
+  return out.length >= 3 ? out : M.breaks;
+}
+function rampFor(metric, nBins){
+  const r = RAMPS[METRICS[metric].ramp];
+  if (nBins === r.length) return r.slice();
+  const res = [r[0]];
+  for (let i = 1; i < nBins; i++) res.push(r[nBins === 2 ? r.length - 1 : 1 + Math.round((i - 1) * (r.length - 2) / (nBins - 2))]);
+  return res;
+}
+function classOf(v, sup, breaks){
+  if (sup) return 'sup'; if (v == null) return 'na';
+  let i = 0; while (i < breaks.length && v >= breaks[i]) i++; return i;
+}
+function colorOf(v, sup){
+  const k = classOf(v, sup, S.breaks);
+  if (k === 'sup') return C.sup; if (k === 'na') return C.na;
+  return rampFor(S.metric, S.breaks.length + 1)[k];
+}
+function binLabels(breaks){
+  const L = ['None (0%)'];
+  for (let i = 1; i <= breaks.length; i++) {
+    if (i === 1) L.push(breaks.length === 1 ? 'Above 0%' : `Under ${fmtBreak(breaks[1])}`);
+    else if (i === breaks.length) L.push(`${fmtBreak(breaks[i-1])} or more`);
+    else L.push(`${fmtBreak(breaks[i-1])} to ${fmtBreak(breaks[i])}`);
+  }
+  return L;
+}
+function stepExpr(m, breaks){
+  const ramp = rampFor(m, breaks.length + 1);
+  const e = ['step', ['to-number', ['get', m]], ramp[0]];
+  breaks.forEach((b, i) => e.push(b, ramp[i + 1]));
+  return e;
+}
+function matchExpr(key, m, breaks, isStates){
+  if (key === 'sup') return ['==', ['get','_sup'], 1];
+  if (key === 'na') return isStates ? ['!', ['has', m]] : ['all', ['==',['get','_has'],1], ['==',['get','_sup'],0], ['!', ['has', m]]];
+  if (key === 'missing') return ['!=', ['get','_has'], 1];
+  const i = +key; const c = ['all', ['has', m]];
+  if (!isStates) c.push(['==', ['get','_sup'], 0]);
+  if (i > 0) c.push(['>=', ['to-number', ['get', m]], breaks[i-1]]);
+  if (i < breaks.length) c.push(['<', ['to-number', ['get', m]], breaks[i]]);
+  return c;
+}
+
+/* ==================================================================
+   Data loading
+================================================================== */
+async function loadCSV(){
+  showLoader('Loading take-up data', 'Downloading…');
+  const text = await fetchText(CONFIG.csvUrl, got => $('#loaderS').textContent = `Downloaded ${(got/1048576).toFixed(1)} MB`);
+  $('#loaderS').textContent = 'Reading rows…';
+  await new Promise(r => setTimeout(r, 20));
+  const parsed = Papa.parse(text.replace(/^\uFEFF/, ''), {header:true, skipEmptyLines:true, transformHeader:h => h.trim()});
+  S.natAgg = newAgg();
+  for (const d of parsed.data) {
+    const raw = String(d.fipsCode ?? '').trim(); if (!raw) continue;
+    const fips = raw.replace(/\.0+$/, '').padStart(12, '0');
+    const r = { fips, cfips: fips.slice(0,5), stateName: (d.state || '').trim(), county: (d.county || '').trim() };
+    NUMS.forEach(k => r[k] = num(d[k]));
+    r.sup = r.totalResStructures == null || r.totalResStructures < CONFIG.minHomes;
+    S.rows.set(fips, r);
+    const s2 = fips.slice(0,2);
+    if (!S.byState.has(s2)) { S.byState.set(s2, []); S.countiesByState.set(s2, new Map()); S.stateAgg.set(s2, newAgg()); }
+    S.byState.get(s2).push(r);
+    const cm = S.countiesByState.get(s2); if (!cm.has(r.cfips)) cm.set(r.cfips, r.county || r.cfips);
+    if (!S.countyAgg.has(r.cfips)) S.countyAgg.set(r.cfips, newAgg());
+    addAgg(S.countyAgg.get(r.cfips), r); addAgg(S.stateAgg.get(s2), r); addAgg(S.natAgg, r);
+  }
+  if (!S.rows.size) throw new Error('The CSV loaded but no rows had a fipsCode. Check the column names.');
+}
+
+async function loadStatesTopo(){
+  try {
+    const topo = await (await fetch(CONFIG.statesTopoUrl)).json();
+    const fc = topojson.feature(topo, topo.objects.states);
+    fc.features.forEach(f => {
+      const fips = String(f.id).padStart(2,'0'); const p = {fips, name: f.properties.name};
+      const r = aggRates(S.stateAgg.get(fips)); RATE_VARS.forEach(k => { if (r[k] != null) p[k] = r[k]; });
+      f.properties = p;
+    });
+    S.statesFC = fc;
+    map.getSource('states').setData(fc);
+  } catch (e) { console.warn('State overview unavailable', e); }
+}
+
+async function loadStateGeo(st){
+  if (S.geo.has(st)) return S.geo.get(st);
+  const url = CONFIG.geojsonUrl(st);
+  const text = await fetchText(url, got => $('#loaderS').textContent = `Downloaded ${(got/1048576).toFixed(1)} MB`);
+  $('#loaderS').textContent = 'Drawing block groups…';
+  await new Promise(r => setTimeout(r, 20));
+  const fc = JSON.parse(text);
+  const isAK = st === 'AK';
+  const raw = new Map(), fit = new Map(), countyFit = new Map(); const stateFit = [Infinity,Infinity,-Infinity,-Infinity];
+  let missing = 0;
+  fc.features = fc.features.filter(f => f && f.geometry);
+  for (const f of fc.features) {
+    const p0 = f.properties || {};
+    const id = String(p0.GEOID ?? p0.GEOID20 ?? p0.GEOID10 ?? p0.geoid ?? '').replace(/\.0+$/, '').padStart(12, '0');
+    const r = S.rows.get(id);
+    const p = { GEOID:id, _cty:id.slice(0,5), _has: r ? 1 : 0, _sup: r && r.sup ? 1 : 0 };
+    if (r) NUMS.forEach(k => { if (r[k] != null) p[k] = r[k]; }); else missing++;
+    f.properties = p;
+    raw.set(id, bboxOf(f.geometry, false));
+    const fb = isAK ? bboxOf(f.geometry, true) : raw.get(id);
+    fit.set(id, fb);
+    if (!countyFit.has(p._cty)) countyFit.set(p._cty, [Infinity,Infinity,-Infinity,-Infinity]);
+    extend(countyFit.get(p._cty), fb); extend(stateFit, fb);
+  }
+  const g = { fc, raw, fit, countyFit, stateFit, missing };
+  S.geo.set(st, g);
+  return g;
+}
+
+/* ==================================================================
+   Map
+================================================================== */
+const cartoTiles = name => ['a','b','c','d'].map(s => `https://${s}.basemaps.cartocdn.com/${name}/{z}/{x}/{y}@2x.png`);
+const map = new maplibregl.Map({
+  container:'map',
+  style:{
+    version:8,
+    sources:{
+      base:{type:'raster', tiles:cartoTiles('light_nolabels'), tileSize:256, maxzoom:19,
+        attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>'},
+      labels:{type:'raster', tiles:cartoTiles('light_only_labels'), tileSize:256, maxzoom:19}
+    },
+    layers:[
+      {id:'bg', type:'background', paint:{'background-color':'#eef1f3'}},
+      {id:'base', type:'raster', source:'base', paint:{'raster-saturation':-0.35, 'raster-contrast':-0.05}},
+      {id:'labels', type:'raster', source:'labels', paint:{'raster-opacity':0.9}}
+    ]
+  },
+  center:[-96.5, 38.6], zoom:3.35, minZoom:2, maxZoom:17,
+  attributionControl:{compact:true}, dragRotate:false, pitchWithRotate:false
+});
+map.touchZoomRotate.disableRotation();
+map.addControl(new maplibregl.NavigationControl({showCompass:false}), 'bottom-right');
+map.addControl(new maplibregl.ScaleControl({unit:'imperial'}), 'bottom-right');
+const mapLoaded = new Promise(r => map.on('load', r));
+
+function hatchImage(){
+  const s = 16, c = document.createElement('canvas'); c.width = c.height = s;
+  const x = c.getContext('2d'); x.strokeStyle = '#94a1ab'; x.lineWidth = 1.6;
+  x.beginPath();
+  for (let i = -s; i <= s; i += 8) { x.moveTo(i, s); x.lineTo(i + s, 0); }
+  x.stroke();
+  return x.getImageData(0, 0, s, s);
+}
+
+function addLayers(){
+  map.addImage('hatch', hatchImage(), {pixelRatio:2});
+  map.addSource('states', {type:'geojson', data:{type:'FeatureCollection', features:[]}, promoteId:'fips'});
+  map.addSource('bg', {type:'geojson', data:{type:'FeatureCollection', features:[]}, promoteId:'GEOID', tolerance:0.3});
+  const before = 'labels';
+  map.addLayer({id:'states-fill', type:'fill', source:'states', paint:{'fill-color':C.missing, 'fill-opacity':0.88}}, before);
+  map.addLayer({id:'bg-fill', type:'fill', source:'bg', paint:{'fill-color':C.missing, 'fill-opacity':0.88}}, before);
+  map.addLayer({id:'bg-hatch', type:'fill', source:'bg', filter:['==',['get','_sup'],1], paint:{'fill-pattern':'hatch'}}, before);
+  map.addLayer({id:'bg-line', type:'line', source:'bg', paint:{'line-color':'#ffffff', 'line-opacity':0.7,
+    'line-width':['interpolate',['linear'],['zoom'], 5,0.05, 8,0.3, 11,0.7, 14,1.2]}}, before);
+  map.addLayer({id:'states-line', type:'line', source:'states', paint:{'line-color':'#ffffff', 'line-width':['interpolate',['linear'],['zoom'],3,0.8,8,2]}}, before);
+  map.addLayer({id:'states-focus', type:'line', source:'states', filter:['==',['get','fips'],''], paint:{'line-color':'#15222d', 'line-width':1.4, 'line-opacity':0.7}}, before);
+  map.addLayer({id:'hover-bg', type:'line', source:'bg', paint:{'line-color':'#15222d', 'line-width':2,
+    'line-opacity':['case',['boolean',['feature-state','hover'],false],1,0]}});
+  map.addLayer({id:'hover-states', type:'line', source:'states', paint:{'line-color':'#15222d', 'line-width':2,
+    'line-opacity':['case',['boolean',['feature-state','hover'],false],1,0]}});
+  map.addLayer({id:'pin-halo', type:'line', source:'bg', filter:['==',['get','GEOID'],''], paint:{'line-color':'#ffffff', 'line-width':6}});
+  map.addLayer({id:'pin-line', type:'line', source:'bg', filter:['==',['get','GEOID'],''], paint:{'line-color':'#15222d', 'line-width':2.5}});
+}
+
+function applyColors(){
+  const m = S.metric, step = stepExpr(m, S.breaks);
+  map.setPaintProperty('bg-fill', 'fill-color', ['case',
+    ['!=', ['get','_has'], 1], C.missing,
+    ['==', ['get','_sup'], 1], C.sup,
+    ['!', ['has', m]], C.na,
+    step]);
+  map.setPaintProperty('states-fill', 'fill-color', ['case', ['!', ['has', m]], C.missing, step]);
+}
+function applyOpacity(){
+  const m = S.metric, key = S.legendLock ?? S.legendHover;
+  const dims = [];
+  if (S.county) dims.push(['!=', ['get','_cty'], S.county]);
+  if (key != null && S.st) dims.push(['!', matchExpr(key, m, S.breaks, false)]);
+  map.setPaintProperty('bg-fill', 'fill-opacity', dims.length ? ['case', ['any', ...dims], 0.18, 0.9] : 0.9);
+  map.setPaintProperty('bg-hatch', 'fill-opacity', dims.length ? ['case', ['any', ...dims], 0.15, 1] : 1);
+  const sKey = !S.st ? key : null;
+  map.setPaintProperty('states-fill', 'fill-opacity', sKey != null ? ['case', matchExpr(sKey, m, S.breaks, true), 0.92, 0.2] : 0.88);
+  map.setLayoutProperty('states-fill', 'visibility', S.st ? 'none' : 'visible');
+  map.setFilter('states-focus', ['==', ['get','fips'], S.st ? ST[S.st].fips : '']);
+}
+
+let hovered = null; // {src, id}
+function setHover(src, id){
+  if (hovered && (hovered.id !== id || hovered.src !== src)) { map.setFeatureState({source:hovered.src, id:hovered.id}, {hover:false}); hovered = null; }
+  if (id != null && !hovered) { map.setFeatureState({source:src, id}, {hover:true}); hovered = {src, id}; }
+}
+
+function fit(b, opts = {}){
+  if (!b || !isFinite(b[0])) return;
+  const small = window.innerWidth < 640;
+  map.fitBounds([[b[0], b[1]], [b[2], b[3]]], {padding: small ? {top:80,bottom:120,left:20,right:20} : {top:80,bottom:60,left:330,right:60}, duration:dur(900), maxZoom:14, ...opts});
+}
+
+/* ==================================================================
+   Filters and selection
+================================================================== */
+function currentRows(){
+  if (!S.st) return [];
+  const rows = S.byState.get(ST[S.st].fips) || [];
+  return S.county ? rows.filter(r => r.cfips === S.county) : rows;
+}
+function areaAgg(){
+  if (!S.st) return S.natAgg;
+  if (S.county) return S.countyAgg.get(S.county);
+  return S.stateAgg.get(ST[S.st].fips);
+}
+function areaName(short){
+  if (!S.st) return 'United States';
+  if (S.county) { const n = S.countiesByState.get(ST[S.st].fips)?.get(S.county) || S.county; return short ? n : `${n}, ${ST[S.st].name}`; }
+  return ST[S.st].name;
+}
+
+function populateStates(){
+  const opts = STATES.slice().sort((a,b) => a[2].localeCompare(b[2]))
+    .map(([a,,n]) => `<option value="${a}">${esc(n)}</option>`).join('');
+  $$('.js-state').forEach(s => s.insertAdjacentHTML('beforeend', opts));
+}
+function populateCounties(){
+  $$('.js-county').forEach(sel => {
+    if (!S.st) { sel.innerHTML = '<option value="">Pick a state first</option>'; sel.disabled = true; return; }
+    const cm = S.countiesByState.get(ST[S.st].fips) || new Map();
+    const list = [...cm.entries()].sort((a,b) => a[1].localeCompare(b[1]));
+    sel.innerHTML = `<option value="">All counties (${list.length})</option>` + list.map(([f,n]) => `<option value="${f}">${esc(n)}</option>`).join('');
+    sel.disabled = false; sel.value = S.county || '';
+  });
+}
+function syncSelects(){
+  $$('.js-state').forEach(s => s.value = S.st || '');
+  $$('.js-county').forEach(s => s.value = S.county || '');
+  $('#resetBtn').disabled = !S.st;
+  $('#filterHint').textContent = !S.st ? 'Pick a state to see its block groups.' : S.county ? 'Showing one county. Other block groups are faded.' : 'Pick a county to zoom in.';
+}
+
+async function selectState(st, {fitView = true} = {}){
+  st = st || null;
+  if (st && !ST[st]) return;
+  S.st = st; S.county = null; S.legendLock = null; unpin();
+  populateCounties(); syncSelects();
+  if (!st) {
+    map.getSource('bg').setData({type:'FeatureCollection', features:[]});
+    if (fitView) map.flyTo({center:[-96.5, 38.6], zoom:3.35, duration:dur(900)});
+    updateAll(); return;
+  }
+  showLoader(`Loading ${ST[st].name}`, 'Downloading block groups…');
+  try {
+    const g = await loadStateGeo(st);
+    if (S.st !== st) return; // user moved on
+    map.getSource('bg').setData(g.fc);
+    hideLoader();
+    if (fitView) fit(g.stateFit);
+  } catch (e) {
+    console.error(e);
+    loaderErr(`Couldn’t load ${ST[st].name}`, e.message);
+    setTimeout(hideLoader, 5000);
+  }
+  updateAll();
+}
+function selectCounty(c, {fitView = true} = {}){
+  S.county = c || null; S.legendLock = null;
+  syncSelects();
+  const g = S.st && S.geo.get(S.st);
+  if (fitView && g) fit(S.county ? g.countyFit.get(S.county) : g.stateFit);
+  updateAll();
+}
+
+/* ==================================================================
+   Sidebar: metric list + summary
+================================================================== */
+function buildMetricList(){
+  $('#metrics').innerHTML = METRIC_ORDER.map(k => {
+    const M = METRICS[k], r = RAMPS[M.ramp];
+    return `<label class="metric">
+      <input type="radio" name="metric" value="${k}" ${k === S.metric ? 'checked' : ''}>
+      <span class="m-title">${esc(M.title)}</span><span class="m-val" data-val="${k}">—</span>
+      <span class="m-desc">${esc(M.desc)}</span>
+      <span class="m-ramp" style="background:linear-gradient(90deg,${r.slice(1).join(',')})"></span>
+    </label>`;
+  }).join('');
+  $('#metrics').addEventListener('change', e => { if (e.target.name === 'metric') { S.metric = e.target.value; S.legendLock = null; updateAll(); } });
+}
+function renderMetricValues(){
+  const rates = aggRates(areaAgg());
+  METRIC_ORDER.forEach(k => { const el = $(`[data-val="${k}"]`); if (el) el.textContent = fmtPct(rates[k]); });
+  $$('#metrics input').forEach(i => i.checked = i.value === S.metric);
+}
+function renderSummary(){
+  const a = areaAgg(); if (!a) { $('#summary').innerHTML = ''; return; }
+  const gap = Math.max(0, a.sfha - a.polS);
+  const unit = !S.st ? 'block groups nationwide' : 'block groups';
+  $('#summary').innerHTML = `
+    <h2>${esc(areaName())}</h2>
+    <p class="sub">${fmtInt(a.n)} ${unit}, ${fmtCompact(a.total)} homes, ${fmtCompact(a.pol)} NFIP policies</p>
+    <div class="gap">
+      <span class="gap-n">${fmtCompact(gap)}</span>
+      <p>homes in the high-risk flood zone have no NFIP policy, out of ${fmtCompact(a.sfha)} homes in that zone.</p>
+    </div>`;
+}
+
+/* ==================================================================
+   Legend
+================================================================== */
+function renderLegend(){
+  const M = METRICS[S.metric], b = S.breaks, ramp = rampFor(S.metric, b.length + 1), labels = binLabels(b);
+  const units = unitsForScale();
+  const counts = new Array(b.length + 1).fill(0); let sup = 0, na = 0;
+  units.forEach(u => { const k = classOf(u.v, u.sup, b); if (k === 'sup') sup++; else if (k === 'na') na++; else counts[k]++; });
+  const max = Math.max(1, ...counts);
+  const unit = S.st ? 'block groups' : 'states';
+  $('#lgTitle').textContent = M.legend;
+  $('#legendMinTitle').textContent = M.title;
+  $('#lgSub').textContent = `Number of ${unit} in ${areaName(true)}${S.st ? '' : ', by statewide rate'}. Hover a row to find them on the map.`;
+  const key = S.legendLock ?? S.legendHover;
+  const row = (k, sw, label, n, barW) => `<button class="lg-row${String(key) === String(k) ? ' on' : ''}" data-k="${k}" aria-pressed="${String(S.legendLock) === String(k)}">
+      <span class="lg-sw${sw === 'hatch' ? ' hatch' : ''}" style="${sw === 'hatch' ? '' : `background:${sw}`}"></span>
+      <span>${esc(label)}</span>
+      <span class="lg-bar">${barW != null ? `<i style="width:${barW}%"></i>` : ''}</span>
+      <span class="lg-n">${n == null ? '' : fmtInt(n)}</span></button>`;
+  let html = '';
+  for (let i = ramp.length - 1; i >= 0; i--) html += row(i, ramp[i], labels[i], counts[i], counts[i] / max * 100);
+  const extras = [];
+  if (S.st) extras.push(row('sup', 'hatch', `Too few homes (under ${CONFIG.minHomes})`, sup, null));
+  if (!S.st) { if (na) extras.push(row('na', C.missing, 'No data', na, null)); }
+  else if (na || S.metric === 'resPenetrationRateSfha') extras.push(row('na', C.na, S.metric === 'resPenetrationRateSfha' ? 'No homes in the high-risk zone' : 'Not applicable', na, null));
+  if (S.st) { const g = S.geo.get(S.st); if (g && g.missing) extras.push(row('missing', C.missing, 'No NFIP data', null, null)); }
+  if (extras.length) html += '<div class="lg-sep"></div>' + extras.join('');
+  $('#lgRows').innerHTML = html;
+  $('#scaleFixed').setAttribute('aria-pressed', S.scale === 'fixed');
+  $('#scaleLocal').setAttribute('aria-pressed', S.scale !== 'fixed');
+}
+function wireLegend(){
+  const rows = $('#lgRows');
+  rows.addEventListener('mouseover', e => { const b = e.target.closest('.lg-row'); if (!b) return; if (S.legendHover !== b.dataset.k) { S.legendHover = b.dataset.k; applyOpacity(); markLegend(); } });
+  rows.addEventListener('mouseleave', () => { S.legendHover = null; applyOpacity(); markLegend(); });
+  rows.addEventListener('focusin', e => { const b = e.target.closest('.lg-row'); if (b) { S.legendHover = b.dataset.k; applyOpacity(); markLegend(); } });
+  rows.addEventListener('focusout', () => { S.legendHover = null; applyOpacity(); markLegend(); });
+  rows.addEventListener('click', e => { const b = e.target.closest('.lg-row'); if (!b) return; S.legendLock = S.legendLock === b.dataset.k ? null : b.dataset.k; applyOpacity(); renderLegend(); });
+  $('#scaleFixed').onclick = () => { S.scale = 'fixed'; S.legendLock = null; updateAll(); };
+  $('#scaleLocal').onclick = () => { S.scale = 'local'; S.legendLock = null; updateAll(); };
+  $('#legendExpand').onclick = () => $('#legend').classList.remove('collapsed');
+  $('#legendCollapse').onclick = () => $('#legend').classList.add('collapsed');
+  const mq = matchMedia('(max-width:640px)');
+  const setMobile = () => { $('#legendCollapse').style.display = mq.matches ? '' : 'none'; if (mq.matches) $('#legend').classList.add('collapsed'); else $('#legend').classList.remove('collapsed'); };
+  mq.addEventListener('change', setMobile); setMobile();
+}
+function markLegend(){
+  const key = S.legendLock ?? S.legendHover;
+  $$('.lg-row').forEach(b => b.classList.toggle('on', String(key) === b.dataset.k));
+}
+
+/* ==================================================================
+   Detail card
+================================================================== */
+const card = $('#card');
+function cmpTrack(v, cAvg, sAvg, color){
+  const vals = [v, cAvg, sAvg].filter(x => x != null && isFinite(x));
+  let max = Math.max(...vals, 0.001) * 1.15;
+  const steps = [.005,.01,.02,.025,.05,.1,.15,.2,.25,.3,.4,.5,.6,.75,1,1.25,1.5,2,3,5];
+  max = steps.find(s => s >= max) ?? max;
+  const pos = x => Math.min(100, x / max * 100);
+  const align = p => p < 18 ? 'l' : p > 82 ? 'r' : 'c';
+  let h = `<div class="cmp" aria-hidden="true"><div class="cmp-track">
+    <div class="cmp-fill" style="width:${pos(v)}%;background:${color}"></div>`;
+  if (cAvg != null) { const p = pos(cAvg); h += `<span class="cmp-tick" style="left:${p}%"></span><span class="cmp-lab up ${align(p)}" style="left:${p}%">County ${fmtPctFine(cAvg)}</span>`; }
+  if (sAvg != null) { const p = pos(sAvg); h += `<span class="cmp-tick" style="left:${p}%"></span><span class="cmp-lab down ${align(p)}" style="left:${p}%">State ${fmtPctFine(sAvg)}</span>`; }
+  h += `<span class="cmp-dot" style="left:${pos(v)}%;background:${color}"></span></div></div>`;
+  return h;
+}
+function sentence(m, r){
+  const out = (r.totalResStructures ?? 0) - (r.totalResStructuresSfha ?? 0);
+  const n = x => `<mark>${fmtInt(x)}</mark>`;
+  switch (m) {
+    case 'resStructuresRateSfha': return `${n(r.totalResStructuresSfha)} of ${n(r.totalResStructures)} homes are in the high-risk flood zone.`;
+    case 'resPenetrationRate': return `${n(r.resContractsInForce)} NFIP policies for ${n(r.totalResStructures)} homes.`;
+    case 'resPenetrationRateSfha': return `${n(r.resContractsInForceSfha)} policies for ${n(r.totalResStructuresSfha)} homes in the high-risk zone.`;
+    case 'resPenetrationRateNonSfha': return `${n(r.resContractsInForceNonSfha)} policies for ${n(out)} homes outside the high-risk zone.`;
+  }
+  return '';
+}
+function renderCardHTML(id){
+  const m = S.metric, M = METRICS[m];
+  const r = S.rows.get(id);
+  const c5 = id.slice(0,5), s2 = id.slice(0,2);
+  const cName = S.countiesByState.get(s2)?.get(c5) || r?.county || 'Unknown county';
+  const sName = ST[FIPS2ST[s2]]?.name || r?.stateName || '';
+  let h = `<div class="card-head"><div><div class="card-place">${esc(cName)}, ${esc(sName)}</div><div class="card-id">Block group ${fmtGeoid(id)}</div></div>
+    <button class="card-x" data-act="close" aria-label="Close details">×</button></div>`;
+  if (!r) return h + `<div class="hero-note"><span>ⓘ</span><span>This block group has no records in the NFIP take-up file.</span></div>`;
+
+  const total = r.totalResStructures ?? 0, sfha = r.totalResStructuresSfha ?? 0, out = Math.max(0, total - sfha);
+  const v = r[m];
+  const cR = aggRates(S.countyAgg.get(c5))[m], sR = aggRates(S.stateAgg.get(s2))[m];
+
+  if (r.sup) {
+    h += `<div class="hero"><div class="hero-label">${esc(M.title)}</div></div>
+      <div class="hero-note"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+      <span><strong>Percentages hidden.</strong> This block group has ${fmtInt(total)} home${total === 1 ? '' : 's'}, fewer than ${CONFIG.minHomes}, so rates would be unreliable. Counts are shown below.</span></div>`;
+  } else if (v == null) {
+    h += `<div class="hero"><div class="hero-label"><span class="hero-sw" style="background:${C.na}"></span>${esc(M.title)}</div>
+      <div class="hero-val">n/a</div>
+      <p class="hero-sent">${m === 'resPenetrationRateSfha' ? 'No homes here are in the high-risk flood zone, so this rate doesn’t apply.' : 'This rate isn’t available for this block group.'}</p></div>`;
+  } else {
+    const col = colorOf(v, false);
+    h += `<div class="hero"><div class="hero-label"><span class="hero-sw" style="background:${col}"></span>${esc(M.title)}</div>
+      <div class="hero-val">${fmtPctFine(v)}</div>
+      <p class="hero-sent">${sentence(m, r)}</p>
+      ${cmpTrack(v, cR, sR, col === RAMPS.water[0] || col === RAMPS.cover[0] ? '#9aa6b0' : col)}</div>`;
+  }
+
+  // split bar: homes by zone with insured portions
+  if (!r.sup && total > 0) {
+    const zi = sfha ? Math.min(1, (r.resContractsInForceSfha ?? 0) / sfha) : 0;
+    const oi = out ? Math.min(1, (r.resContractsInForceNonSfha ?? 0) / out) : 0;
+    const fz = M.focusSeg === 'z' || M.focusSeg === 'a', fo = M.focusSeg === 'o' || M.focusSeg === 'a';
+    h += `<div class="split-wrap">
+      <div class="split-cap"><span>In high-risk zone: ${fmtInt(sfha)}</span><span>Outside: ${fmtInt(out)}</span></div>
+      <div class="split" role="img" aria-label="${fmtInt(sfha)} homes in the high-risk zone and ${fmtInt(out)} outside; the dark portion of each is insured">
+        ${sfha > 0 ? `<div class="s s-z${fz ? ' focus' : ''}" style="flex:${sfha}"><i style="width:${zi*100}%"></i></div>` : ''}
+        ${out > 0 ? `<div class="s s-o${fo ? ' focus' : ''}" style="flex:${out}"><i style="width:${oi*100}%"></i></div>` : ''}
+      </div>
+      <div class="split-key"><span><b style="background:var(--insured)"></b>Insured</span><span><b style="background:var(--zone)"></b>Uninsured in zone</span><span><b style="background:var(--out)"></b>Uninsured outside</span></div>
+    </div>`;
+  }
+
+  // breakdown table
+  const hl = key => key === M.primary ? 'hl-1' : M.secondary.includes(key) ? 'hl-2' : '';
+  const colOn = col => (M.primary.endsWith('.' + col) || M.secondary.some(k => k.endsWith('.' + col))) ? ' col-on' : '';
+  const hid = `<span class="muted" title="Hidden: fewer than ${CONFIG.minHomes} homes">hidden</span>`;
+  const pc = x => r.sup ? hid : x == null ? '<span class="muted">n/a</span>' : fmtPctFine(x);
+  const cell = (key, col, content) => `<td class="${colOn(col)}"><span class="${hl(key)}">${content}</span></td>`;
+  const shareZ = total ? sfha / total : null, shareO = total ? out / total : null;
+  h += `<table class="bt">
+    <thead><tr><th></th><th class="${colOn('z').trim()}">High-risk zone</th><th class="${colOn('o').trim()}">Outside</th><th class="${colOn('a').trim()}">All homes</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">Homes</th>${cell('homes.z','z',fmtInt(sfha))}${cell('homes.o','o',fmtInt(out))}${cell('homes.a','a',fmtInt(total))}</tr>
+      <tr><th scope="row">Share of homes</th>${cell('share.z','z',pc(r.resStructuresRateSfha ?? shareZ))}${cell('share.o','o',pc(shareO))}${cell('share.a','a',r.sup ? hid : '100%')}</tr>
+      <tr><th scope="row">NFIP policies</th>${cell('pol.z','z',fmtInt(r.resContractsInForceSfha))}${cell('pol.o','o',fmtInt(r.resContractsInForceNonSfha))}${cell('pol.a','a',fmtInt(r.resContractsInForce))}</tr>
+      <tr><th scope="row">Insured rate</th>${cell('rate.z','z',pc(r.resPenetrationRateSfha))}${cell('rate.o','o',pc(r.resPenetrationRateNonSfha))}${cell('rate.a','a',pc(r.resPenetrationRate))}</tr>
+    </tbody></table>`;
+  h += `<div class="card-hint">Click the block group to keep these details open.</div>
+    <div class="card-actions"><button class="linkbtn" data-act="zoom">Zoom to block group</button><button class="linkbtn" data-act="method">About these numbers</button></div>`;
+  return h;
+}
+function renderStateCardHTML(fips){
+  const m = S.metric, M = METRICS[m], a = S.stateAgg.get(fips), st = FIPS2ST[fips];
+  const name = ST[st]?.name || S.statesFC?.features.find(f => f.properties.fips === fips)?.properties.name || 'Unknown';
+  if (!a) return `<div class="card-head"><div><div class="card-place">${esc(name)}</div><div class="card-id">No data in this dashboard</div></div></div>`;
+  const v = aggRates(a)[m], nat = aggRates(S.natAgg)[m], col = v == null ? C.na : colorOf(v, false);
+  return `<div class="card-head"><div><div class="card-place">${esc(name)}</div><div class="card-id">${fmtInt(a.n)} block groups, ${fmtCompact(a.total)} homes</div></div></div>
+    <div class="hero"><div class="hero-label"><span class="hero-sw" style="background:${col}"></span>${esc(M.title)}</div>
+    <div class="hero-val">${fmtPctFine(v)}</div>
+    <p class="hero-sent">National rate: ${fmtPctFine(nat)}</p></div>
+    <div class="card-hint">Click to explore ${esc(name)}’s block groups.</div>`;
+}
+function placeCard(pt){
+  const W = $('#mapwrap').clientWidth, H = $('#mapwrap').clientHeight, w = card.offsetWidth, h = card.offsetHeight;
+  let x = pt.x + 18, y = pt.y + 18;
+  if (x + w > W - 10) x = pt.x - w - 18;
+  if (x < 10) x = 10;
+  if (y + h > H - 10) y = Math.max(10, H - h - 10);
+  card.style.transform = `translate(${x}px,${y}px)`;
+}
+let cardFor = null;
+function showHoverCard(kind, id, pt){
+  if (cardFor !== kind + id) { card.innerHTML = kind === 'bg' ? renderCardHTML(id) : renderStateCardHTML(id); cardFor = kind + id; }
+  card.hidden = false; placeCard(pt);
+}
+function hideCard(){ if (!S.pinned) { card.hidden = true; cardFor = null; } }
+function pin(id){
+  S.pinned = id; cardFor = null;
+  map.setFilter('pin-line', ['==', ['get','GEOID'], id]); map.setFilter('pin-halo', ['==', ['get','GEOID'], id]);
+  card.classList.add('pinned'); card.innerHTML = renderCardHTML(id); card.hidden = false; card.style.transform = '';
+}
+function unpin(){
+  S.pinned = null; cardFor = null;
+  if (map.getLayer('pin-line')) { map.setFilter('pin-line', ['==', ['get','GEOID'], '']); map.setFilter('pin-halo', ['==', ['get','GEOID'], '']); }
+  card.classList.remove('pinned'); card.hidden = true;
+}
+card.addEventListener('click', e => {
+  const a = e.target.closest('[data-act]')?.dataset.act; if (!a) return;
+  if (a === 'close') unpin();
+  if (a === 'zoom' && S.pinned) { const g = S.geo.get(S.st); g && fit(g.fit.get(S.pinned), {maxZoom:15}); }
+  if (a === 'method') switchTab('method');
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { unpin(); $('#results').hidden = true; document.body.classList.remove('filters-open'); } });
+
+function wireMap(){
+  const isTouch = matchMedia('(hover: none)').matches;
+  map.on('mousemove', e => {
+    if (!S.ready || isTouch) return;
+    const layer = S.st ? 'bg-fill' : 'states-fill';
+    const f = map.queryRenderedFeatures(e.point, {layers:[layer]})[0];
+    const id = f ? (S.st ? f.properties.GEOID : f.properties.fips) : null;
+    setHover(S.st ? 'bg' : 'states', id);
+    map.getCanvas().style.cursor = f ? 'pointer' : '';
+    if (S.pinned) return;
+    if (id) showHoverCard(S.st ? 'bg' : 'state', id, e.point); else hideCard();
+  });
+  map.getCanvas().addEventListener('mouseleave', () => { setHover(null, null); hideCard(); });
+  map.on('click', e => {
+    if (!S.ready) return;
+    if (!S.st) {
+      const f = map.queryRenderedFeatures(e.point, {layers:['states-fill']})[0];
+      if (f && FIPS2ST[f.properties.fips]) { hideCard(); selectState(FIPS2ST[f.properties.fips]); }
+      return;
+    }
+    const f = map.queryRenderedFeatures(e.point, {layers:['bg-fill']})[0];
+    if (f) pin(f.properties.GEOID); else unpin();
+  });
+}
+
+/* ==================================================================
+   Search (OpenStreetMap Nominatim, no key)
+================================================================== */
+function wireSearch(){
+  const form = $('#searchForm'), input = $('#searchIn'), list = $('#results');
+  let last = 0;
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const q = input.value.trim(); if (!q) return;
+    const wait = Math.max(0, 1100 - (Date.now() - last)); if (wait) await new Promise(r => setTimeout(r, wait)); // Nominatim: max 1 request/second
+    last = Date.now();
+    list.hidden = false; list.innerHTML = '<li class="msg">Searching…</li>';
+    try {
+      const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&countrycodes=us&limit=5&accept-language=en&q=${encodeURIComponent(q)}`;
+      const res = await fetch(url); if (!res.ok) throw new Error(res.status);
+      const data = await res.json();
+      if (!data.length) { list.innerHTML = '<li class="msg">No matches in the U.S. Try adding a city or state.</li>'; return; }
+      if (data.length === 1) { list.hidden = true; goToPlace(data[0]); return; }
+      list.innerHTML = data.map((p, i) => {
+        const parts = p.display_name.split(', ');
+        return `<li><button data-i="${i}"><div class="r1">${esc(parts.slice(0,2).join(', '))}</div><div class="r2">${esc(parts.slice(2).filter(x => x !== 'United States').join(', '))}</div></button></li>`;
+      }).join('');
+      list._data = data;
+      list.querySelector('button')?.focus();
+    } catch (err) {
+      list.innerHTML = '<li class="msg">Search is unavailable right now. Try again in a moment.</li>';
+    }
+  });
+  list.addEventListener('click', e => { const b = e.target.closest('button[data-i]'); if (!b) return; list.hidden = true; goToPlace(list._data[+b.dataset.i]); });
+  document.addEventListener('click', e => { if (!e.target.closest('.search')) list.hidden = true; });
+}
+async function goToPlace(p){
+  const lat = +p.lat, lon = +p.lon, a = p.address || {};
+  const iso = a['ISO3166-2-lvl4'] || '';
+  const st = iso.startsWith('US-') ? iso.slice(3) : NAME2ST[(a.state || '').toLowerCase()];
+  if (!st || !ST[st]) { toast('That place is outside the states covered here.'); return; }
+  const isState = p.addresstype === 'state' || p.type === 'administrative' && p.place_rank <= 8;
+  if (st !== S.st) await selectState(st, {fitView:isState});
+  if (isState) return;
+  const g = S.geo.get(st);
+  const hit = g ? findBG(g, lon, lat) : null;
+  if (hit && hit.slice(0,5) !== S.county) selectCounty(hit.slice(0,5), {fitView:false});
+  const bb = (p.boundingbox || []).map(Number); // [south, north, west, east]
+  const span = bb.length === 4 ? Math.max(bb[1] - bb[0], bb[3] - bb[2]) : 0;
+  if (span > 0.03) map.fitBounds([[bb[2], bb[0]], [bb[3], bb[1]]], {padding:80, maxZoom:13, duration:dur(1000)});
+  else map.flyTo({center:[lon, lat], zoom:15, duration:dur(1200)});
+  if (S.marker) S.marker.remove();
+  const el = document.createElement('div'); el.className = 'pin';
+  S.marker = new maplibregl.Marker({element:el}).setLngLat([lon, lat]).addTo(map);
+  if (hit && span <= 0.03) map.once('moveend', () => pin(hit));
+  else if (!hit) toast('No block group found at that exact spot.');
+}
+
+/* ==================================================================
+   Data tab
+================================================================== */
+const COLS_BG = [
+  {k:'fips', h:'Block group', t:'id', raw:'fipsCode'},
+  {k:'county', h:'County', t:'text', raw:'county'},
+  {k:'totalResStructures', h:'Homes', t:'int'},
+  {k:'totalResStructuresSfha', h:'Homes in high-risk zone', t:'int'},
+  {k:'resStructuresRateSfha', h:'Share in high-risk zone', t:'pct'},
+  {k:'resContractsInForce', h:'NFIP policies', t:'int'},
+  {k:'resContractsInForceSfha', h:'Policies in high-risk zone', t:'int'},
+  {k:'resContractsInForceNonSfha', h:'Policies outside', t:'int'},
+  {k:'resPenetrationRate', h:'Insured rate, all homes', t:'pct'},
+  {k:'resPenetrationRateSfha', h:'Insured rate in high-risk zone', t:'pct'},
+  {k:'resPenetrationRateNonSfha', h:'Insured rate outside', t:'pct'}
+];
+const COLS_ST = [{k:'name', h:'State', t:'text', raw:''}, {k:'n', h:'Block groups', t:'int', raw:''}, ...COLS_BG.slice(2)];
+const EXPORT_BG = ['fipsCode','CountyfipsCode','state','county', ...METRIC_ORDER, 'totalResStructures','totalResStructuresSfha','resContractsInForce','resContractsInForceSfha','resContractsInForceNonSfha'];
+
+function tableData(){
+  let rows, cols;
+  if (!S.st) {
+    cols = COLS_ST;
+    rows = STATES.filter(([,f]) => S.stateAgg.has(f)).map(([a,f,n]) => ({...aggAsRow(S.stateAgg.get(f)), name:n, st:a, _kind:'state'}));
+  } else {
+    cols = COLS_BG; rows = currentRows();
+  }
+  const q = T.q.toLowerCase();
+  if (q) rows = rows.filter(r => (r.fips || '').includes(q) || (r.county || '').toLowerCase().includes(q) || (r.name || '').toLowerCase().includes(q) || (r.st || '').toLowerCase() === q);
+  if (T.key) {
+    const k = T.key, d = T.dir, mask = $('#maskChk').checked;
+    const val = r => (mask && r.sup && RATE_VARS.includes(k)) ? null : r[k];
+    rows = rows.slice().sort((a, b) => {
+      const x = val(a), y = val(b);
+      if (x == null && y == null) return 0; if (x == null) return 1; if (y == null) return -1;
+      return (typeof x === 'string' ? x.localeCompare(y) : x - y) * d;
+    });
+  }
+  return {rows, cols};
+}
+function renderTable(){
+  const {rows, cols} = tableData();
+  const mask = $('#maskChk').checked;
+  $('#dataTitle').textContent = !S.st ? 'All states' : `Block groups in ${areaName()}`;
+  $('#dataMeta').textContent = !S.st
+    ? `${rows.length} states and DC, summed from block groups. Pick a state to see its block groups.`
+    : `${fmtInt(rows.length)} block groups. Click a row to see it on the map.`;
+  $('#dlGeo').disabled = !S.st || !S.geo.has(S.st);
+  const pages = Math.max(1, Math.ceil(rows.length / T.size)); T.page = Math.min(T.page, pages - 1);
+  const slice = rows.slice(T.page * T.size, (T.page + 1) * T.size);
+  const th = cols.map(c => {
+    const arrow = T.key === c.k ? `<span class="arr">${T.dir > 0 ? ' ▲' : ' ▼'}</span>` : '';
+    const raw = c.raw === undefined ? c.k : c.raw;
+    return `<th scope="col" class="${c.t === 'text' || c.t === 'id' ? 'tl' : ''}" aria-sort="${T.key === c.k ? (T.dir > 0 ? 'ascending' : 'descending') : 'none'}"><button data-k="${c.k}">${esc(c.h)}${arrow}${raw ? `<span class="raw">${raw}</span>` : ''}</button></th>`;
+  }).join('');
+  const td = (r, c) => {
+    const v = r[c.k];
+    if (c.t === 'pct') {
+      if (mask && r.sup) return `<td><span class="chip" title="Fewer than ${CONFIG.minHomes} homes">hidden</span></td>`;
+      return v == null ? '<td class="na">n/a</td>' : `<td>${fmtPctFine(v)}</td>`;
+    }
+    if (c.t === 'int') return `<td>${fmtInt(v)}</td>`;
+    return `<td class="tl">${esc(v)}</td>`;
+  };
+  $('#dataTable').innerHTML = rows.length
+    ? `<thead><tr>${th}</tr></thead><tbody>${slice.map(r => `<tr data-id="${r._kind === 'state' ? r.st : r.fips}" data-kind="${r._kind || 'bg'}" tabindex="0">${cols.map(c => td(r, c)).join('')}</tr>`).join('')}</tbody>`
+    : `<tbody><tr><td class="empty">No rows match. Clear the filter box or pick another area.</td></tr></tbody>`;
+  $('#pager').innerHTML = `<span>Showing ${rows.length ? fmtInt(T.page * T.size + 1) : 0}–${fmtInt(Math.min(rows.length, (T.page + 1) * T.size))} of ${fmtInt(rows.length)}</span>
+    <div class="pbtns"><button class="btn ghost" data-p="-1" ${T.page === 0 ? 'disabled' : ''}>Previous</button><button class="btn ghost" data-p="1" ${T.page >= pages - 1 ? 'disabled' : ''}>Next</button></div>`;
+}
+function wireTable(){
+  $('#dataTable').addEventListener('click', e => {
+    const h = e.target.closest('thead button');
+    if (h) { const k = h.dataset.k; if (T.key === k) T.dir *= -1; else { T.key = k; T.dir = (k === 'fips' || k === 'county' || k === 'name') ? 1 : -1; } T.page = 0; renderTable(); return; }
+    const tr = e.target.closest('tbody tr[data-id]'); if (tr) openRow(tr);
+  });
+  $('#dataTable').addEventListener('keydown', e => { if (e.key === 'Enter') { const tr = e.target.closest('tbody tr[data-id]'); if (tr) openRow(tr); } });
+  $('#pager').addEventListener('click', e => { const b = e.target.closest('[data-p]'); if (b) { T.page += +b.dataset.p; renderTable(); $('#tab-data').scrollTo({top:0}); } });
+  let t; $('#tblSearch').addEventListener('input', e => { clearTimeout(t); t = setTimeout(() => { T.q = e.target.value.trim(); T.page = 0; renderTable(); }, 150); });
+  $('#maskChk').addEventListener('change', renderTable);
+  $('#dlCsv').onclick = downloadCSV;
+  $('#dlGeo').onclick = downloadGeo;
+}
+async function openRow(tr){
+  if (tr.dataset.kind === 'state') { switchTab('map'); await selectState(tr.dataset.id); return; }
+  const id = tr.dataset.id; switchTab('map');
+  const g = S.geo.get(S.st);
+  if (g) { fit(g.fit.get(id), {maxZoom:15}); map.once('moveend', () => pin(id)); }
+}
+function csvCell(v){ if (v == null) return 'N/A'; const s = String(v); return /[",\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s; }
+function fileSlug(){ return ['NFIP_Residential_Takeup', S.st || 'US', S.county ? areaName(true).replace(/[^A-Za-z0-9]+/g,'-') : '', CONFIG.fileTag].filter(Boolean).join('_'); }
+function download(text, name, type){
+  const url = URL.createObjectURL(new Blob([text], {type}));
+  const a = Object.assign(document.createElement('a'), {href:url, download:name}); document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+function downloadCSV(){
+  const {rows} = tableData(); const mask = $('#maskChk').checked;
+  let out;
+  if (!S.st) {
+    const hdr = ['state','blockGroups','totalResStructures','totalResStructuresSfha','resContractsInForce','resContractsInForceSfha','resContractsInForceNonSfha', ...METRIC_ORDER];
+    out = [hdr.join(',')].concat(rows.map(r => [r.name, r.n, r.totalResStructures, r.totalResStructuresSfha, r.resContractsInForce, r.resContractsInForceSfha, r.resContractsInForceNonSfha, ...METRIC_ORDER.map(k => r[k])].map(csvCell).join(',')));
+  } else {
+    const hdr = [...EXPORT_BG, 'ratesSuppressed'];
+    out = [hdr.join(',')].concat(rows.map(r => [r.fips, r.cfips, r.stateName, r.county,
+      ...METRIC_ORDER.map(k => (mask && r.sup) ? 'suppressed' : r[k]),
+      r.totalResStructures, r.totalResStructuresSfha, r.resContractsInForce, r.resContractsInForceSfha, r.resContractsInForceNonSfha,
+      r.sup ? 'TRUE' : 'FALSE'].map(csvCell).join(',')));
+  }
+  download(out.join('\n'), fileSlug() + '.csv', 'text/csv;charset=utf-8');
+  toast('CSV downloaded');
+}
+function downloadGeo(){
+  const g = S.geo.get(S.st); if (!g) return;
+  const mask = $('#maskChk').checked, q = T.q.toLowerCase();
+  const feats = g.fc.features.filter(f => (!S.county || f.properties._cty === S.county) && (!q || f.properties.GEOID.includes(q) || (S.rows.get(f.properties.GEOID)?.county || '').toLowerCase().includes(q))).map(f => {
+    const r = S.rows.get(f.properties.GEOID); const p = {GEOID:f.properties.GEOID};
+    if (r) { p.county = r.county; p.state = r.stateName; NUMS.forEach(k => p[k] = (mask && r.sup && RATE_VARS.includes(k)) ? null : r[k]); p.ratesSuppressed = r.sup; }
+    return {type:'Feature', properties:p, geometry:f.geometry};
+  });
+  download(JSON.stringify({type:'FeatureCollection', features:feats}), fileSlug() + '.geojson', 'application/geo+json');
+  toast('GeoJSON downloaded');
+}
+
+/* ==================================================================
+   Tabs, URL, wiring
+================================================================== */
+function switchTab(tab){
+  S.tab = tab;
+  $$('.tabs [role=tab]').forEach(b => { const on = b.dataset.tab === tab; b.setAttribute('aria-selected', on); b.tabIndex = on ? 0 : -1; });
+  $$('.tabpanel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + tab));
+  if (tab === 'map') requestAnimationFrame(() => map.resize());
+  if (tab === 'data') renderTable();
+  writeHash();
+}
+function writeHash(){
+  if (!S.ready) return;
+  const p = new URLSearchParams();
+  if (S.st) p.set('state', S.st);
+  if (S.county) p.set('county', S.county);
+  if (S.metric !== 'resPenetrationRate') p.set('show', S.metric);
+  if (S.scale !== 'fixed') p.set('scale', 'local');
+  if (S.tab !== 'map') p.set('tab', S.tab);
+  const h = p.toString();
+  history.replaceState(null, '', h ? '#' + h : location.pathname + location.search);
+}
+function readHash(){ return new URLSearchParams(location.hash.slice(1)); }
+
+function updateAll(){
+  if (!S.ready) return;
+  S.breaks = computeBreaks();
+  applyColors(); applyOpacity();
+  renderMetricValues(); renderSummary(); renderLegend();
+  if (S.pinned) card.innerHTML = renderCardHTML(S.pinned);
+  cardFor = null;
+  if (S.tab === 'data') renderTable();
+  writeHash();
+}
+
+function wireUI(){
+  populateStates(); buildMetricList(); wireLegend(); wireSearch(); wireTable();
+  $$('.js-state').forEach(s => s.addEventListener('change', e => { T.page = 0; selectState(e.target.value); }));
+  $$('.js-county').forEach(s => s.addEventListener('change', e => { T.page = 0; selectCounty(e.target.value); }));
+  $('#resetBtn').onclick = () => { if (S.marker) { S.marker.remove(); S.marker = null; } selectState(null); };
+  $$('.tabs [role=tab]').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
+  $('.tabs').addEventListener('keydown', e => {
+    if (!['ArrowLeft','ArrowRight'].includes(e.key)) return;
+    const tabs = $$('.tabs [role=tab]'), i = tabs.findIndex(t => t.dataset.tab === S.tab);
+    const n = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length]; switchTab(n.dataset.tab); n.focus();
+  });
+  $$('.js-goto-method').forEach(b => b.onclick = () => switchTab('method'));
+  $('#shareBtn').onclick = async () => { try { await navigator.clipboard.writeText(location.href); toast('Link copied'); } catch { toast('Copy the address bar to share this view'); } };
+  $('#filtersToggle').onclick = () => { const o = document.body.classList.toggle('filters-open'); $('#filtersToggle').setAttribute('aria-expanded', o); };
+  $$('.js-min').forEach(e => e.textContent = CONFIG.minHomes);
+  $$('.js-asof').forEach(e => e.textContent = CONFIG.dataAsOf);
+  $('#appSub').textContent = `Share of homes with an active NFIP policy, by census block group. Data as of ${CONFIG.dataAsOf}.`;
+  $('#defBody').innerHTML = DEFS.map(([v, d, s, plain]) => `<tr><td>${v}${plain ? `<span class="plain">${esc(plain)}</span>` : ''}</td><td>${esc(d)}</td><td>${esc(s)}</td></tr>`).join('');
+}
+
+/* ==================================================================
+   Boot
+================================================================== */
+(async function init(){
+  wireUI();
+  try {
+    await Promise.all([loadCSV(), mapLoaded]);
+  } catch (e) {
+    console.error(e);
+    loaderErr('The take-up data didn’t load', e.message || String(e));
+    return;
+  }
+  addLayers(); wireMap();
+  await loadStatesTopo();
+  S.ready = true;
+  hideLoader();
+  const h = readHash();
+  if (METRICS[h.get('show')]) S.metric = h.get('show');
+  if (h.get('scale') === 'local') S.scale = 'local';
+  const st = (h.get('state') || '').toUpperCase();
+  if (ST[st]) {
+    await selectState(st, {fitView:!h.get('county')});
+    const c = h.get('county'); if (c && S.countiesByState.get(ST[st].fips)?.has(c)) selectCounty(c);
+  } else updateAll();
+  if (['data','method'].includes(h.get('tab'))) switchTab(h.get('tab'));
+})();
+</script>
+</body>
+</html>
