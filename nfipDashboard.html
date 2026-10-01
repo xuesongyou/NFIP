@@ -515,7 +515,11 @@ const ST = {}; const FIPS2ST = {}; const NAME2ST = {};
 STATES.forEach(([a,f,n]) => { ST[a] = {fips:f, name:n}; FIPS2ST[f] = a; NAME2ST[n.toLowerCase()] = a; });
 
 const EPS = 1e-9;
-const RAMP = ['#f1f3f4','#e8efb6','#bfe0a1','#7fc6a4','#43a4a2','#257a93','#1c4d74'];
+const RAMPS = {
+  resPenetrationRate:        ['#f1f3f4','#e8efb6','#bfe0a1','#7fc6a4','#43a4a2','#257a93','#1c4d74'], // yellow-green to teal
+  resPenetrationRateSfha:    ['#f1f3f4','#e4e4f4','#c4c4e6','#9d9ad3','#7570b8','#524b98','#332c6e'], // lavender to indigo
+  resPenetrationRateNonSfha: ['#f1f3f4','#f7eccf','#ecd3a0','#dbb06e','#c08746','#985f2e','#69401f']  // sand to umber
+};
 const C = { missing:'#e9ecee', na:'#cfd5da', sup:'#f3f5f6' };
 
 const METRIC_ORDER = ['resPenetrationRate','resPenetrationRateSfha','resPenetrationRateNonSfha'];
@@ -712,7 +716,7 @@ function computeBreaks(){
   return out.length >= 3 ? out : M.breaks;
 }
 function rampFor(nBins){
-  const r = RAMP;
+    const r = RAMPS[S.metric];
   if (nBins === r.length) return r.slice();
   const res = [r[0]];
   for (let i = 1; i < nBins; i++) res.push(r[nBins === 2 ? r.length - 1 : 1 + Math.round((i - 1) * (r.length - 2) / (nBins - 2))]);
@@ -1070,7 +1074,7 @@ function buildMetricList(){
       <input type="radio" name="metric" value="${k}" ${k === S.metric ? 'checked' : ''}>
       <span class="m-title">${esc(M.title)}</span><span class="m-val" data-val="${k}">—</span>
       <span class="m-desc">${esc(M.desc)}</span>
-      <span class="m-ramp" style="background:linear-gradient(90deg,${RAMP.slice(1).join(',')})"></span>
+            <span class="m-ramp" style="background:linear-gradient(90deg,${RAMPS[k].slice(1).join(',')})"></span>
     </label>`;
   }).join('');
   $('#metrics').addEventListener('change', e => { if (e.target.name === 'metric') { S.metric = e.target.value; S.legendLock = null; updateAll(); } });
@@ -1187,7 +1191,7 @@ function renderCardHTML(id){
     h += `<div class="hero"><div class="hero-label"><span class="hero-sw" style="background:${col}"></span>${esc(M.title)}</div>
       <div class="hero-val">${fmtPctFine(v)}</div>
       <p class="hero-asof">As of ${esc(asOf)}</p>
-      ${cmpTrack(v, cR, sR, col === RAMP[0] ? '#9aa6b0' : col)}</div>`;
+            ${cmpTrack(v, cR, sR, col === RAMPS[m][0] ? '#9aa6b0' : col)}</div>`;
   }
 
   const hl = key => key === M.primary ? 'hl-1' : M.secondary.includes(key) ? 'hl-2' : '';
