@@ -427,7 +427,6 @@ abbr[title]{text-decoration:underline dotted 1px;text-underline-offset:2px;curso
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn" id="dlCsv"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 1.5v8M3.5 6 7 9.5 10.5 6M2 12.5h10" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>Download CSV</button>
-          <button class="btn ghost" id="dlGeo" title="Pick a state first">Download GeoJSON</button>
         </div>
       </div>
       <div class="tbl-scroll"><table class="dt" id="dataTable"></table></div>
@@ -1374,7 +1373,7 @@ function renderTable(){
   $('#dataMeta').textContent = !S.st
     ? `${rows.length} states and DC, summed from block groups. Pick a state to see its block groups.`
     : `${fmtInt(rows.length)} block groups. Click a row to see it on the map.`;
-  $('#dlGeo').disabled = !S.st || !S.geo.has(S.st);
+ 
   const pages = Math.max(1, Math.ceil(rows.length / T.size)); T.page = Math.min(T.page, pages - 1);
   const slice = rows.slice(T.page * T.size, (T.page + 1) * T.size);
   const th = cols.map(c => {
@@ -1410,7 +1409,6 @@ function wireTable(){
   let t; $('#tblSearch').addEventListener('input', e => { clearTimeout(t); t = setTimeout(() => { T.q = e.target.value.trim(); T.page = 0; renderTable(); }, 150); });
   $('#maskChk').addEventListener('change', renderTable);
   $('#dlCsv').onclick = downloadCSV;
-  $('#dlGeo').onclick = downloadGeo;
 }
 async function openRow(tr){
   if (tr.dataset.kind === 'state') { switchTab('map'); await selectState(tr.dataset.id); return; }
