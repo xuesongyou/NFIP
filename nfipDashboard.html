@@ -443,11 +443,7 @@ abbr[title]{text-decoration:underline dotted 1px;text-underline-offset:2px;curso
   <section id="tab-method" class="tabpanel" role="tabpanel" aria-labelledby="t-method">
     <article class="doc">
       <h2>Methodology</h2>
-      <p class="lede">How the takeup rates on this dashboard are built, what each number means, and where the limits are.</p>
 
-      <!-- EDIT: Replace or expand any section below. Text marked with a yellow tag is a placeholder. -->
-
-      <h3>What the dashboard shows</h3>
       <p>For every census block group in the 50 states and the District of Columbia, the dashboard shows the NFIP residential takeup rate: the share of residential structures with an active National Flood Insurance Program (NFIP) contract. It reports the rate for all residential structures, for those inside the Special Flood Hazard Area (SFHA), and for those outside it. The SFHA is the FEMA-mapped floodplain with a 1% chance of flooding in any given year.</p>
 
       <h3>Data sources</h3>
@@ -467,8 +463,8 @@ abbr[title]{text-decoration:underline dotted 1px;text-underline-offset:2px;curso
       <p>County, state, and national rates on the dashboard are calculated by summing counts across block groups and then dividing, not by averaging block group rates. This weights each area by its number of residential structures.</p>
       <p><span class="todo">Add any other important caveats.</span></p>
 
-      <h3>Small numbers</h3>
-      <p>Rates are hidden for block groups with fewer than <span class="js-min">5</span> residential structures, because one contract more or less would swing the rate dramatically. These block groups appear on the map with a gray hatch pattern, and their contract counts are still shown. The takeup rate in the SFHA is marked “not applicable” where a block group has no residential structures in the SFHA.</p>
+      <h3>Areas with small numbers of residential structures</h3>
+      <p>NFIP takeup rates are hidden for block groups with fewer than <span class="js-min">5</span> residential structures, as estimates can be noisy. These block groups appear on the map with a gray hatch pattern, and their contract counts are still shown. The takeup rate in the SFHA is marked “not applicable” where a block group has no residential structures in the SFHA.</p>
 
       <h3>Important notes:</h3>
       <ul>
