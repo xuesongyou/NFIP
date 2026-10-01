@@ -441,24 +441,24 @@ abbr[title]{text-decoration:underline dotted 1px;text-underline-offset:2px;curso
 
       <p>For every census block group in the 50 states and the District of Columbia, the dashboard shows the NFIP residential takeup rate: the share of residential structures with an active National Flood Insurance Program (NFIP) contract. It reports the rate for all residential structures, for those inside the Special Flood Hazard Area (SFHA), and for those outside it. The SFHA is the FEMA-mapped floodplain with a 1% chance of flooding in any given year.</p>
 
-      <h3>Data sources</h3>
+      <h3>Data sources:</h3>
       <ul>
-        <li><strong>NFIP residential contract-in-force:</strong> OpenFEMA dataset <em>FIMA NFIP Redacted Policies, v3</em>. Contracts are counted as active as of the date in the <code>asOfDate</code> field (currently <span class="js-asof">—</span>).</li>
+        <li><strong>NFIP residential contract-in-force:</strong> OpenFEMA dataset <em>NFIP Redacted Policies - v3</em>. Contracts are counted as active as of the date in the <code>asOfDate</code> field (currently <span class="js-asof">—</span>).</li>
         <li><strong>Residential structures:</strong> USACE National Structure Inventory (NSI): 2022 dataset. Residential only.</li>
         <li><strong>Flood zones:</strong> FEMA National Flood Hazard Layer (NFHL). Special Flood Hazard Areas (SFHAs) are labeled as Zone A, Zone AO, Zone AH, Zones A1-A30, Zone AE, Zone A99, Zone AR, Zone AR/AE, Zone AR/AO, Zone AR/A1-A30, Zone AR/A, Zone V, Zone VE, and Zones V1-V30.</span></li>
         <li><strong>Boundaries:</strong> Census block groups; 2020 cartographic boundary files from the U.S. Census Bureau.</li>
       </ul>
 
-      <h3>How the rates are calculated</h3>
+      <h3>How NFIP residential takeup rates are calculated:</h3>
       <div class="formula">
         NFIP residential takeup rate = active NFIP residential contracts ÷ residential structures<br>
-        Takeup rate in SFHA = active contracts in the SFHA ÷ residential structures in the SFHA<br>
-        Takeup rate outside SFHA = active contracts outside the SFHA ÷ residential structures outside the SFHA
+        NFIP residential takeup rate in SFHA = active contracts in the SFHA ÷ residential structures in the SFHA<br>
+        NFIP residential takeup rate outside SFHA = active contracts outside the SFHA ÷ residential structures outside the SFHA
       </div>
       <p>County, state, and national rates on the dashboard are calculated by summing counts across block groups and then dividing, not by averaging block group rates. This weights each area by its number of residential structures.</p>
       <p><span class="todo">Add any other important caveats.</span></p>
 
-      <h3>Areas with small numbers of residential structures</h3>
+      <h3>Areas with small numbers of residential structures:</h3>
       <p>NFIP takeup rates are hidden for block groups with fewer than <span class="js-min">5</span> residential structures, as estimates can be noisy. These block groups appear on the map with a gray hatch pattern, and their contract counts are still shown. The takeup rate in the SFHA is marked “not applicable” where a block group has no residential structures in the SFHA.</p>
 
       <h3>Important notes:</h3>
@@ -470,7 +470,7 @@ abbr[title]{text-decoration:underline dotted 1px;text-underline-offset:2px;curso
         <li>The data is a snapshot of contracts in force on one date. Takeup changes as contracts lapse and renew.</li>
       </ul>
 
-      <h3>Variable definitions</h3>
+      <h3>Variable definitions:</h3>
       <div class="deftable-wrap">
         <table class="def">
           <thead><tr><th>Variable</th><th>Definition</th><th>Data source</th></tr></thead>
