@@ -47,7 +47,7 @@ button,input,select{font:inherit;color:inherit}
 /* ---------- top bar ---------- */
 .topbar{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;padding:14px 24px 0;background:var(--paper);border-bottom:1px solid var(--line)}
 .brand{display:flex;gap:14px;align-items:center;padding-bottom:12px;min-width:0}
-.brand svg{flex:none}
+.brand-logo{flex:none;height:40px;width:auto;max-width:160px;object-fit:contain}
 .brand h1{font-family:var(--serif);font-weight:600;font-size:22px;line-height:1.15;margin:0;letter-spacing:-.01em}
 .brand p{margin:2px 0 0;color:var(--ink-3);font-size:13px}
 .tabs{display:flex;gap:4px}
@@ -313,11 +313,7 @@ abbr[title]{text-decoration:underline dotted 1px;text-underline-offset:2px;curso
 
 <header class="topbar">
   <div class="brand">
-    <svg width="36" height="36" viewBox="0 0 36 36" aria-hidden="true">
-      <rect width="36" height="36" rx="8" fill="#15222d"/>
-      <path d="M9 18.5 18 11l9 7.5V25H9z" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
-      <path d="M5 27.5c2.2 0 2.2-1.6 4.4-1.6s2.2 1.6 4.4 1.6 2.2-1.6 4.4-1.6 2.2 1.6 4.4 1.6 2.2-1.6 4.4-1.6 2.2 1.6 3.9 1.6" fill="none" stroke="#7fc4d6" stroke-width="2" stroke-linecap="round"/>
-    </svg>
+        <img class="brand-logo" src="I4G.png" alt="Insurance for Good">
     <div>
       <h1 id="appTitle">NFIP residential takeup rates</h1>
       <p id="appSub">By census block group</p>
