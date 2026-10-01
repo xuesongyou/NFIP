@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Residential flood insurance take-up by block group</title>
-<meta name="description" content="Explore NFIP residential flood insurance take-up rates by census block group across the United States.">
+<title>NFIP residential takeup rates by census block group</title>
+<meta name="description" content="Explore NFIP residential flood insurance takeup rates by census block group across the United States.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet">
@@ -246,7 +246,7 @@ table.dt{border-collapse:collapse;width:100%;min-width:1100px;font-size:13px}
 .dt th:first-child,.dt td:first-child,.dt th.tl,.dt td.tl{text-align:left}
 .dt thead th{position:sticky;top:0;background:#f8f9fa;font-weight:600;vertical-align:bottom;border-bottom:1px solid var(--line);white-space:normal;min-width:96px}
 .dt thead button{border:0;background:none;padding:0;font-weight:600;cursor:pointer;text-align:inherit;display:block;width:100%}
-.dt thead .raw{display:block;font-weight:400;color:var(--ink-3);font-size:11px;margin-top:2px;word-break:break-all}
+.dt thead .raw{display:block;font-weight:400;color:var(--ink-3);font-size:11px;margin-top:3px;white-space:nowrap}
 .dt thead .arr{color:var(--water)}
 .dt tbody tr{cursor:pointer}
 .dt tbody tr:hover{background:var(--water-soft)}
@@ -298,6 +298,15 @@ table.def{font-family:var(--sans);font-size:13.5px;line-height:1.45;border-colla
 @media (prefers-reduced-motion:reduce){
   *{transition:none!important;animation-duration:.01ms!important}
 }
+/* ---------- v2 additions ---------- */
+.hero-asof{margin:0;font-size:12.5px;color:var(--ink-3)}
+.glossary{margin:10px 2px 0;font-size:12.5px;color:var(--ink-3);line-height:1.45}
+.glossary b{color:var(--ink-2);font-weight:600}
+abbr[title]{text-decoration:underline dotted 1px;text-underline-offset:2px;cursor:help}
+.card-foot{font-size:11.5px;color:var(--ink-3);padding:0 16px 12px;line-height:1.4}
+.bt{margin-top:2px}
+.bt td,.bt th{padding:7px 4px}
+.bt tbody th{font-weight:600}
 </style>
 </head>
 <body>
@@ -310,8 +319,8 @@ table.def{font-family:var(--sans);font-size:13.5px;line-height:1.45;border-colla
       <path d="M5 27.5c2.2 0 2.2-1.6 4.4-1.6s2.2 1.6 4.4 1.6 2.2-1.6 4.4-1.6 2.2 1.6 4.4 1.6 2.2-1.6 4.4-1.6 2.2 1.6 3.9 1.6" fill="none" stroke="#7fc4d6" stroke-width="2" stroke-linecap="round"/>
     </svg>
     <div>
-      <h1 id="appTitle">Residential flood insurance take-up</h1>
-      <p id="appSub">Share of homes with an active NFIP policy, by census block group</p>
+      <h1 id="appTitle">NFIP residential takeup rates</h1>
+      <p id="appSub">By census block group</p>
     </div>
   </div>
   <nav class="tabs" role="tablist" aria-label="Views">
@@ -335,7 +344,7 @@ table.def{font-family:var(--sans);font-size:13.5px;line-height:1.45;border-colla
           <select id="countySel" class="select js-county" disabled><option value="">Pick a state first</option></select>
         </div>
         <div class="filters-foot">
-          <p class="hint" id="filterHint">Pick a state to see its block groups.</p>
+          <p class="hint" id="filterHint">Pick a state, or click one on the map.</p>
           <button class="linkbtn" id="resetBtn" disabled>Clear</button>
         </div>
       </div>
@@ -343,6 +352,7 @@ table.def{font-family:var(--sans);font-size:13.5px;line-height:1.45;border-colla
       <div>
         <h2 class="section-title" id="metricsLbl">Color the map by</h2>
         <div class="metrics" id="metrics" role="radiogroup" aria-labelledby="metricsLbl"></div>
+        <p class="glossary"><b>SFHA</b> (Special Flood Hazard Area) is FEMA’s high-risk flood zone: the mapped floodplain with a 1% chance of flooding in any year.</p>
       </div>
 
       <div class="summary" id="summary" aria-live="polite"></div>
@@ -351,7 +361,7 @@ table.def{font-family:var(--sans);font-size:13.5px;line-height:1.45;border-colla
     </aside>
 
     <div class="mapwrap" id="mapwrap">
-      <div id="map" aria-label="Map of flood insurance take-up by block group"></div>
+      <div id="map" aria-label="Map of NFIP residential takeup rates by block group"></div>
 
       <div class="search">
         <form id="searchForm" role="search">
@@ -417,7 +427,7 @@ table.def{font-family:var(--sans);font-size:13.5px;line-height:1.45;border-colla
         <div class="left">
           <label class="sr-only" for="tblSearch">Filter rows</label>
           <input class="textin" id="tblSearch" type="search" placeholder="Filter by name or FIPS code">
-          <label class="chk"><input type="checkbox" id="maskChk" checked> Hide rates where a block group has fewer than <span class="js-min">5</span> homes</label>
+          <label class="chk"><input type="checkbox" id="maskChk" checked> Hide rates for block groups with fewer than <span class="js-min">5</span> residential structures</label>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn" id="dlCsv"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 1.5v8M3.5 6 7 9.5 10.5 6M2 12.5h10" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>Download CSV</button>
@@ -433,16 +443,16 @@ table.def{font-family:var(--sans);font-size:13.5px;line-height:1.45;border-colla
   <section id="tab-method" class="tabpanel" role="tabpanel" aria-labelledby="t-method">
     <article class="doc">
       <h2>Methodology</h2>
-      <p class="lede">How the take-up rates on this dashboard are built, what each number means, and where the limits are.</p>
+      <p class="lede">How the takeup rates on this dashboard are built, what each number means, and where the limits are.</p>
 
       <!-- EDIT: Replace or expand any section below. Text marked with a yellow tag is a placeholder. -->
 
       <h3>What the dashboard shows</h3>
-      <p>For every census block group in the 50 states and the District of Columbia, the dashboard compares the number of residential structures with the number of active National Flood Insurance Program (NFIP) residential contracts. It splits both counts by whether a structure sits inside the Special Flood Hazard Area (SFHA), the FEMA-mapped floodplain with a 1% chance of flooding in any given year. Throughout the dashboard, "homes" means residential structures and "high-risk flood zone" means the SFHA.</p>
+      <p>For every census block group in the 50 states and the District of Columbia, the dashboard shows the NFIP residential takeup rate: the share of residential structures with an active National Flood Insurance Program (NFIP) contract. It reports the rate for all residential structures, for those inside the Special Flood Hazard Area (SFHA), and for those outside it. The SFHA is the FEMA-mapped floodplain with a 1% chance of flooding in any given year.</p>
 
       <h3>Data sources</h3>
       <ul>
-        <li><strong>NFIP policies:</strong> OpenFEMA dataset <em>FIMA NFIP Redacted Policies, v3</em>, policies in force as of <span class="js-asof">June 2026</span>. <span class="todo">Add download date and the filters you applied (e.g., residential occupancy types, active policy dates).</span></li>
+        <li><strong>NFIP contracts:</strong> OpenFEMA dataset <em>FIMA NFIP Redacted Policies, v3</em>. Contracts are counted as active as of the date in the <code>asOfDate</code> field (currently <span class="js-asof">—</span>). <span class="todo">Add download date and the filters you applied (e.g., residential occupancy types).</span></li>
         <li><strong>Residential structures:</strong> USACE National Structure Inventory (NSI). <span class="todo">Add NSI version and how residential occupancy was defined.</span></li>
         <li><strong>Flood zones:</strong> FEMA National Flood Hazard Layer (NFHL). <span class="todo">Add extraction date and which zones count as SFHA (e.g., A, AE, AH, AO, AR, A99, V, VE).</span></li>
         <li><strong>Boundaries:</strong> Census block groups. <span class="todo">Add vintage (2010 or 2020) and source (TIGER/Line or cartographic boundary files).</span></li>
@@ -450,23 +460,22 @@ table.def{font-family:var(--sans);font-size:13.5px;line-height:1.45;border-colla
 
       <h3>How the rates are calculated</h3>
       <div class="formula">
-        Share of homes in the high-risk zone = homes in SFHA ÷ all homes<br>
-        Insured rate, all homes = active NFIP contracts ÷ all homes<br>
-        Insured rate in the high-risk zone = contracts in SFHA ÷ homes in SFHA<br>
-        Insured rate outside the zone = contracts outside SFHA ÷ homes outside SFHA
+        NFIP residential takeup rate = active NFIP residential contracts ÷ residential structures<br>
+        Takeup rate in SFHA = active contracts in the SFHA ÷ residential structures in the SFHA<br>
+        Takeup rate outside SFHA = active contracts outside the SFHA ÷ residential structures outside the SFHA
       </div>
-      <p>County, state, and national figures on the dashboard are calculated by summing counts across block groups and then dividing, not by averaging block group percentages. This weights each area by its number of homes.</p>
-      <p><span class="todo">Describe how policies were assigned to block groups and to inside/outside the SFHA (e.g., using the policy's census block group field and flood zone field).</span></p>
+      <p>County, state, and national rates on the dashboard are calculated by summing counts across block groups and then dividing, not by averaging block group rates. This weights each area by its number of residential structures.</p>
+      <p><span class="todo">Describe how contracts were assigned to block groups and to inside/outside the SFHA (e.g., using the policy’s census block group and flood zone fields).</span></p>
 
       <h3>Small numbers</h3>
-      <p>Percentages are hidden for block groups with fewer than <span class="js-min">5</span> residential structures, because one policy more or less would swing the rate dramatically. These block groups appear on the map with a gray hatch pattern. Their counts are still shown. The insured rate in the high-risk zone is marked "not applicable" where a block group has no homes in the SFHA.</p>
+      <p>Rates are hidden for block groups with fewer than <span class="js-min">5</span> residential structures, because one contract more or less would swing the rate dramatically. These block groups appear on the map with a gray hatch pattern, and their contract counts are still shown. The takeup rate in the SFHA is marked “not applicable” where a block group has no residential structures in the SFHA.</p>
 
       <h3>Reading the numbers with care</h3>
       <ul>
-        <li>A contract is not always one home. A single policy on a multi-unit building can cover several residences, and a structure can carry more than one policy, so rates can occasionally exceed 100%.</li>
+        <li>A contract is not always one structure. A single contract on a multi-unit building can cover several residences, and a structure can carry more than one contract, so rates can occasionally exceed 100%.</li>
         <li>Structure counts in the NSI are modeled estimates rather than a parcel-by-parcel census.</li>
-        <li>A low share of homes in the high-risk zone can reflect areas FEMA has not mapped, not only low flood risk. Many damaging floods happen outside the SFHA.</li>
-        <li>The data is a snapshot of policies in force at one point in time. Take-up changes as policies lapse and renew.</li>
+        <li>The SFHA doesn’t capture all flood risk. Many damaging floods happen outside it, and some areas have not been mapped by FEMA.</li>
+        <li>The data is a snapshot of contracts in force on one date. Takeup changes as contracts lapse and renew.</li>
         <li><span class="todo">Add any other caveats, such as geocoding precision of the redacted policy data.</span></li>
       </ul>
 
@@ -479,7 +488,7 @@ table.def{font-family:var(--sans);font-size:13.5px;line-height:1.45;border-colla
       </div>
 
       <h3>Suggested citation</h3>
-      <p><span class="todo">Your name or organization (2026). Residential flood insurance take-up by census block group. Data as of June 2026. URL.</span></p>
+      <p><span class="todo">Your name or organization (2026). NFIP residential takeup rates by census block group. Contracts active as of <span class="js-asof">—</span>. URL.</span></p>
 
       <h3>Contact</h3>
       <p><span class="todo">Add an email or link for questions and corrections.</span></p>
@@ -497,12 +506,14 @@ table.def{font-family:var(--sans);font-size:13.5px;line-height:1.45;border-colla
    CONFIGURATION: edit paths here to match your repo layout
 ================================================================== */
 const CONFIG = {
-  csvUrl: 'NFIP_Residential_Takeup_202606.csv',
-  geojsonUrl: st => `${st}_bg.json`,          // e.g. st => `data/geojson/${st}_bg.json`
-  statesTopoUrl: 'https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json', // national overview only; the dashboard works without it
-  dataAsOf: 'June 2026',
-  minHomes: 5,                                  // suppress % variables when totalResStructures < this
-  fileTag: '202606'
+  dataUrl: 'NFIP_Residential_Takeup.xlsx',     // .xlsx or .csv; reads the first worksheet of an .xlsx
+  geojsonUrl: st => `${st}_bg.json`,           // e.g. st => `data/geojson/${st}_bg.json`
+  xlsxLib: 'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js',
+  statesTopoUrl: 'https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json', // national overview only
+  // Basemap: OpenFreeMap (free, no key, no limits). Falls back to Esri Light Gray if it can't load.
+  basemapStyle: 'https://tiles.openfreemap.org/styles/positron',
+  roadsAboveDataFromZoom: 10,                  // roads draw faintly over the choropleth when zoomed in this far
+  minHomes: 5                                  // hide rates when totalResStructures < this
 };
 
 /* ==================================================================
@@ -513,44 +524,29 @@ const ST = {}; const FIPS2ST = {}; const NAME2ST = {};
 STATES.forEach(([a,f,n]) => { ST[a] = {fips:f, name:n}; FIPS2ST[f] = a; NAME2ST[n.toLowerCase()] = a; });
 
 const EPS = 1e-9;
-const RAMPS = {
-  water:   ['#f1f3f4','#dbe8f4','#b3cfe8','#7fafd8','#4f8bc2','#2a65a3','#15406f'],
-  cover:   ['#f1f3f4','#e8efb6','#bfe0a1','#7fc6a4','#43a4a2','#257a93','#1c4d74']
-};
+const RAMP = ['#f1f3f4','#e8efb6','#bfe0a1','#7fc6a4','#43a4a2','#257a93','#1c4d74'];
 const C = { missing:'#e9ecee', na:'#cfd5da', sup:'#f3f5f6' };
 
-const METRIC_ORDER = ['resStructuresRateSfha','resPenetrationRate','resPenetrationRateSfha','resPenetrationRateNonSfha'];
+const METRIC_ORDER = ['resPenetrationRate','resPenetrationRateSfha','resPenetrationRateNonSfha'];
 const METRICS = {
-  resStructuresRateSfha: {
-    title:'Homes in the high-risk flood zone',
-    legend:'Share of homes in the high-risk flood zone',
-    desc:'Share of homes inside FEMA’s 1%-annual-chance floodplain (SFHA).',
-    ramp:'water', breaks:[EPS,.05,.10,.25,.50,.75],
-    primary:'share.z', secondary:['homes.z','homes.a'], focusSeg:'z'
-  },
   resPenetrationRate: {
-    title:'Homes with flood insurance',
-    legend:'Share of all homes with an NFIP policy',
-    desc:'Share of all homes with an active NFIP policy.',
-    ramp:'cover', breaks:[EPS,.01,.025,.05,.10,.20],
-    primary:'rate.a', secondary:['pol.a','homes.a'], focusSeg:'a'
+    title:'NFIP residential takeup rate',
+    desc:'Share of all residential structures with an active NFIP contract.',
+    breaks:[EPS,.01,.025,.05,.10,.20], primary:'rate.a', secondary:['pol.a']
   },
   resPenetrationRateSfha: {
-    title:'Insured in the high-risk zone',
-    legend:'Share of homes in the high-risk zone with an NFIP policy',
-    desc:'Share of homes inside the floodplain with an NFIP policy. Most federally backed mortgages here require one.',
-    ramp:'cover', breaks:[EPS,.10,.20,.30,.50,.75],
-    primary:'rate.z', secondary:['pol.z','homes.z'], focusSeg:'z'
+    title:'NFIP residential takeup rate in SFHA',
+    desc:'Share of residential structures inside the SFHA with an active NFIP contract. Most federally backed mortgages here require flood insurance.',
+    breaks:[EPS,.10,.20,.30,.50,.75], primary:'rate.z', secondary:['pol.z']
   },
   resPenetrationRateNonSfha: {
-    title:'Insured outside the high-risk zone',
-    legend:'Share of homes outside the high-risk zone with an NFIP policy',
-    desc:'Share of homes outside the mapped floodplain with an NFIP policy.',
-    ramp:'cover', breaks:[EPS,.005,.01,.02,.05,.10],
-    primary:'rate.o', secondary:['pol.o','homes.o'], focusSeg:'o'
+    title:'NFIP residential takeup rate outside SFHA',
+    desc:'Share of residential structures outside the SFHA with an active NFIP contract.',
+    breaks:[EPS,.005,.01,.02,.05,.10], primary:'rate.o', secondary:['pol.o']
   }
 };
-const NUMS = ['resStructuresRateSfha','resPenetrationRate','resPenetrationRateSfha','resPenetrationRateNonSfha','totalResStructures','totalResStructuresSfha','resContractsInForce','resContractsInForceSfha','resContractsInForceNonSfha'];
+// read from the file; totalResStructures and totalResStructuresSfha are used internally for suppression and area rates only
+const NUMS = ['resPenetrationRate','resPenetrationRateSfha','resPenetrationRateNonSfha','totalResStructures','totalResStructuresSfha','resContractsInForce','resContractsInForceSfha','resContractsInForceNonSfha'];
 const RATE_VARS = METRIC_ORDER;
 
 const DEFS = [
@@ -558,15 +554,13 @@ const DEFS = [
   ['CountyfipsCode','5-digit county FIPS code (e.g., 01001)','','County ID'],
   ['state','State name (e.g., Alabama)','',''],
   ['county','County name (e.g., Autauga County)','',''],
-  ['resStructuresRateSfha','Percent of residential structures located inside the Special Flood Hazard Area (the FEMA-mapped 1%-annual-chance floodplain); value range 0–1','Residential structures from the National Structure Inventory (NSI), overlaid with the FEMA National Flood Hazard Layer (NFHL)','Homes in the high-risk flood zone'],
-  ['resPenetrationRate','Percent of all residential structures with an active NFIP contract; value range 0–1','FEMA National Flood Insurance Program (NFIP) policy data; NSI structure counts','Homes with flood insurance'],
-  ['resPenetrationRateSfha','Percent of residential structures inside the SFHA with an active NFIP contract; value range 0–1. Shown as N/A where a block group has zero residential structures in the SFHA.','NFIP policy data from OpenFEMA Dataset: NFIP Redacted Policies – v3; residential structures from the NSI, overlaid with the NFHL','Insured in the high-risk zone'],
-  ['resPenetrationRateNonSfha','Percent of residential structures outside the SFHA with an active NFIP contract; value range 0–1','NFIP policy data from OpenFEMA Dataset: NFIP Redacted Policies – v3; residential structures from the NSI, overlaid with the NFHL','Insured outside the high-risk zone'],
-  ['totalResStructures','Number of residential structures','National Structure Inventory (NSI)','Homes'],
-  ['totalResStructuresSfha','Number of residential structures located inside the Special Flood Hazard Area (the FEMA-mapped 1%-annual-chance floodplain)','Residential structures from the NSI, overlaid with the NFHL','Homes in the high-risk zone'],
-  ['resContractsInForce','Number of active NFIP residential contracts','NFIP policy data from OpenFEMA Dataset: NFIP Redacted Policies – v3','NFIP policies'],
-  ['resContractsInForceSfha','Number of active NFIP residential contracts inside the SFHA','NFIP policy data from OpenFEMA Dataset: NFIP Redacted Policies – v3','Policies in the high-risk zone'],
-  ['resContractsInForceNonSfha','Number of active NFIP residential contracts outside the SFHA','NFIP policy data from OpenFEMA Dataset: NFIP Redacted Policies – v3','Policies outside the high-risk zone']
+  ['resPenetrationRate','Percent of all residential structures with an active NFIP contract; value range 0–1','FEMA National Flood Insurance Program (NFIP) policy data; National Structure Inventory (NSI) structure counts','NFIP residential takeup rate'],
+  ['resPenetrationRateSfha','Percent of residential structures inside the SFHA with an active NFIP contract; value range 0–1. Shown as N/A where a block group has zero residential structures in the SFHA.','NFIP policy data from OpenFEMA Dataset: NFIP Redacted Policies – v3; residential structures from the NSI, overlaid with the FEMA National Flood Hazard Layer (NFHL)','NFIP residential takeup rate in SFHA'],
+  ['resPenetrationRateNonSfha','Percent of residential structures outside the SFHA with an active NFIP contract; value range 0–1','NFIP policy data from OpenFEMA Dataset: NFIP Redacted Policies – v3; residential structures from the NSI, overlaid with the NFHL','NFIP residential takeup rate outside SFHA'],
+  ['resContractsInForce','Number of active NFIP residential contracts','NFIP policy data from OpenFEMA Dataset: NFIP Redacted Policies – v3','NFIP contracts'],
+  ['resContractsInForceSfha','Number of active NFIP residential contracts inside the SFHA','NFIP policy data from OpenFEMA Dataset: NFIP Redacted Policies – v3','NFIP contracts in SFHA'],
+  ['resContractsInForceNonSfha','Number of active NFIP residential contracts outside the SFHA','NFIP policy data from OpenFEMA Dataset: NFIP Redacted Policies – v3','NFIP contracts outside SFHA'],
+  ['asOfDate','Date as of which NFIP contracts are counted as active (in force)','NFIP policy data from OpenFEMA Dataset: NFIP Redacted Policies – v3','As of']
 ];
 
 /* ==================================================================
@@ -574,11 +568,12 @@ const DEFS = [
 ================================================================== */
 const S = {
   ready:false, rows:new Map(), byState:new Map(), countiesByState:new Map(),
-  stateAgg:new Map(), countyAgg:new Map(), natAgg:null, geo:new Map(),
+  stateAgg:new Map(), countyAgg:new Map(), natAgg:null, geo:new Map(), asOf:null,
   st:null, county:null, metric:'resPenetrationRate', scale:'fixed', breaks:[],
-  pinned:null, hover:null, legendHover:null, legendLock:null, tab:'map', marker:null, statesFC:null
+  pinned:null, legendHover:null, legendLock:null, tab:'map', marker:null, statesFC:null
 };
 const T = { key:null, dir:1, page:0, size:50, q:'' };
+let map, BEFORE = null;
 
 /* ==================================================================
    Helpers
@@ -596,7 +591,7 @@ function fmtPct(v){
   if (p < 0.1) return '<0.1%';
   return (p >= 10 ? p.toFixed(0) : p.toFixed(1)) + '%';
 }
-function fmtPctFine(v){ // for detail cards
+function fmtPctFine(v){
   if (v == null || !isFinite(v)) return '—';
   const p = v * 100;
   if (p === 0) return '0%';
@@ -606,47 +601,74 @@ function fmtPctFine(v){ // for detail cards
 function fmtBreak(v){ const p = v * 100; return (+p.toPrecision(3)).toString() + '%'; }
 function num(v){
   if (v == null) return null;
+  if (typeof v === 'number') return Number.isFinite(v) ? v : null;
   const s = String(v).trim();
   if (s === '' || /^(n\/?a|nan|null|none)$/i.test(s)) return null;
   const n = +s; return Number.isFinite(n) ? n : null;
 }
+// Normalize a date (Excel serial, Date, or text) to "YYYY-MM-DD"
+function parseDate(v){
+  if (v == null || v === '') return null;
+  const iso = d => isNaN(d) ? null : d.toISOString().slice(0,10);
+  if (v instanceof Date) return iso(v);
+  if (typeof v === 'number') {
+    if (v > 19000101 && v < 21001231) { const s = String(Math.round(v)); return `${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`; }
+    if (v > 1 && v < 100000) return iso(new Date(Math.round((v - 25569) * 86400000)));
+    return null;
+  }
+  const s = String(v).trim(); let m;
+  if ((m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))) return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+  if ((m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/))) { const y = m[3].length === 2 ? '20' + m[3] : m[3]; return `${y}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`; }
+  if (/^\d{8}$/.test(s)) return `${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`;
+  return iso(new Date(s));
+}
+const fmtDate = (iso, short) => iso ? new Date(iso + 'T00:00:00Z').toLocaleDateString('en-US', {year:'numeric', month: short ? 'short' : 'long', day:'numeric', timeZone:'UTC'}) : '—';
 function fmtGeoid(id){ return `${id.slice(0,2)} ${id.slice(2,5)} ${id.slice(5,11)} ${id.slice(11)}`; }
 function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(()=>t.classList.remove('show'), 2200); }
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const dur = ms => reduceMotion ? 0 : ms;
 
-async function fetchText(url, onProgress){
+async function fetchBlob(url, onProgress){
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Couldn’t load ${url} (HTTP ${res.status}). Check the path in CONFIG.`);
-  if (!res.body || !res.body.getReader) return res.text();
+  if (!res.body || !res.body.getReader) return res.blob();
   const reader = res.body.getReader(); const chunks = []; let got = 0;
   for (;;) { const {done, value} = await reader.read(); if (done) break; chunks.push(value); got += value.length; onProgress && onProgress(got); }
-  return new Blob(chunks).text();
+  return new Blob(chunks);
 }
+const mb = got => `Downloaded ${(got/1048576).toFixed(1)} MB`;
+const tick = () => new Promise(r => setTimeout(r, 20));
+function loadScript(src){ return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error(`Couldn’t load ${src}`)); document.head.appendChild(s); }); }
 
 function showLoader(t, s){ $('#loader').hidden = false; $('#loaderBox').classList.remove('err'); $('#loaderT').textContent = t; $('#loaderS').textContent = s || ''; }
 function loaderErr(t, s){ $('#loader').hidden = false; $('#loaderBox').classList.add('err'); $('#loaderT').textContent = t; $('#loaderS').textContent = s || ''; }
 function hideLoader(){ $('#loader').hidden = true; }
 
 /* ---------- aggregation ---------- */
-const newAgg = () => ({n:0,total:0,sfha:0,pol:0,polS:0,polN:0});
+const newAgg = () => ({n:0,total:0,sfha:0,pol:0,polS:0,polN:0,dates:new Map()});
 function addAgg(a, r){
   a.n++; a.total += r.totalResStructures || 0; a.sfha += r.totalResStructuresSfha || 0;
   a.pol += r.resContractsInForce || 0; a.polS += r.resContractsInForceSfha || 0; a.polN += r.resContractsInForceNonSfha || 0;
+  if (r.asOf) a.dates.set(r.asOf, (a.dates.get(r.asOf) || 0) + 1);
 }
 function aggRates(a){
   if (!a) return {};
   const out = a.total - a.sfha;
   return {
-    resStructuresRateSfha: a.total > 0 ? a.sfha / a.total : null,
     resPenetrationRate: a.total > 0 ? a.pol / a.total : null,
     resPenetrationRateSfha: a.sfha > 0 ? a.polS / a.sfha : null,
     resPenetrationRateNonSfha: out > 0 ? a.polN / out : null
   };
 }
+function modeDate(dates){ let best = null, n = -1; dates.forEach((c, d) => { if (c > n || (c === n && d > best)) { best = d; n = c; } }); return best; }
+function aggDateLabel(a, short){
+  if (!a || !a.dates.size) return '—';
+  const d = modeDate(a.dates);
+  return a.dates.size > 1 ? `${fmtDate(d, short)} (varies)` : fmtDate(d, short);
+}
 function aggAsRow(a){
-  return { n:a.n, totalResStructures:a.total, totalResStructuresSfha:a.sfha, resContractsInForce:a.pol,
-    resContractsInForceSfha:a.polS, resContractsInForceNonSfha:a.polN, ...aggRates(a), sup:false };
+  return { n:a.n, resContractsInForce:a.pol, resContractsInForceSfha:a.polS, resContractsInForceNonSfha:a.polN,
+    ...aggRates(a), asOf: a.dates.size ? modeDate(a.dates) : null, asOfLabel: aggDateLabel(a, true), sup:false };
 }
 
 /* ---------- geometry ---------- */
@@ -685,23 +707,21 @@ function findBG(g, lon, lat){
    Color scale
 ================================================================== */
 function unitsForScale(){
-  // returns [{v, sup}] for the current view level, for the current metric
   const m = S.metric;
   if (!S.st) return STATES.map(([,f]) => ({v: aggRates(S.stateAgg.get(f))[m] ?? null, sup:false}));
   return currentRows().map(r => ({v: r[m], sup: r.sup}));
 }
-function niceRound(v){ return +v.toPrecision(2); }
 function computeBreaks(){
   const M = METRICS[S.metric];
   if (S.scale === 'fixed') return M.breaks;
   const vals = unitsForScale().filter(u => !u.sup && u.v != null && u.v > 0).map(u => u.v).sort((a,b) => a-b);
   if (vals.length < 12) return M.breaks;
   const out = [EPS];
-  for (let i = 1; i < 6; i++) { const q = niceRound(vals[Math.floor(i * vals.length / 6)]); if (q > out[out.length-1]) out.push(q); }
+  for (let i = 1; i < 6; i++) { const q = +vals[Math.floor(i * vals.length / 6)].toPrecision(2); if (q > out[out.length-1]) out.push(q); }
   return out.length >= 3 ? out : M.breaks;
 }
-function rampFor(metric, nBins){
-  const r = RAMPS[METRICS[metric].ramp];
+function rampFor(nBins){
+  const r = RAMP;
   if (nBins === r.length) return r.slice();
   const res = [r[0]];
   for (let i = 1; i < nBins; i++) res.push(r[nBins === 2 ? r.length - 1 : 1 + Math.round((i - 1) * (r.length - 2) / (nBins - 2))]);
@@ -714,7 +734,7 @@ function classOf(v, sup, breaks){
 function colorOf(v, sup){
   const k = classOf(v, sup, S.breaks);
   if (k === 'sup') return C.sup; if (k === 'na') return C.na;
-  return rampFor(S.metric, S.breaks.length + 1)[k];
+  return rampFor(S.breaks.length + 1)[k];
 }
 function binLabels(breaks){
   const L = ['None (0%)'];
@@ -726,7 +746,7 @@ function binLabels(breaks){
   return L;
 }
 function stepExpr(m, breaks){
-  const ramp = rampFor(m, breaks.length + 1);
+  const ramp = rampFor(breaks.length + 1);
   const e = ['step', ['to-number', ['get', m]], ramp[0]];
   breaks.forEach((b, i) => e.push(b, ramp[i + 1]));
   return e;
@@ -743,19 +763,56 @@ function matchExpr(key, m, breaks, isStates){
 }
 
 /* ==================================================================
-   Data loading
+   Data loading (XLSX or CSV)
 ================================================================== */
-async function loadCSV(){
-  showLoader('Loading take-up data', 'Downloading…');
-  const text = await fetchText(CONFIG.csvUrl, got => $('#loaderS').textContent = `Downloaded ${(got/1048576).toFixed(1)} MB`);
-  $('#loaderS').textContent = 'Reading rows…';
-  await new Promise(r => setTimeout(r, 20));
-  const parsed = Papa.parse(text.replace(/^\uFEFF/, ''), {header:true, skipEmptyLines:true, transformHeader:h => h.trim()});
+function parseXlsx(buf){
+  const lib = new URL(CONFIG.xlsxLib, location.href).href;
+  const onMain = async () => {
+    if (!window.XLSX) await loadScript(lib);
+    await tick();
+    const wb = XLSX.read(buf, {type:'array'});
+    return XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {defval:null, raw:true});
+  };
+  // Parse in a background worker so the page stays responsive; fall back to the main thread.
+  return new Promise((resolve, reject) => {
+    let w;
+    try {
+      const src = `importScripts(${JSON.stringify(lib)});
+        onmessage = function(e){ try {
+          var wb = XLSX.read(e.data, {type:'array'});
+          postMessage({ok:true, rows: XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {defval:null, raw:true})});
+        } catch(err){ postMessage({ok:false, error:String(err && err.message || err)}); } };`;
+      w = new Worker(URL.createObjectURL(new Blob([src], {type:'text/javascript'})));
+    } catch (e) { onMain().then(resolve, reject); return; }
+    w.onmessage = e => { w.terminate(); e.data.ok ? resolve(e.data.rows) : reject(new Error(e.data.error)); };
+    w.onerror = e => { e.preventDefault && e.preventDefault(); w.terminate(); onMain().then(resolve, reject); };
+    w.postMessage(buf);
+  });
+}
+
+async function loadData(){
+  const url = CONFIG.dataUrl, isXlsx = /\.xlsx?$/i.test(url.split('?')[0]);
+  showLoader('Loading takeup data', 'Downloading…');
+  const blob = await fetchBlob(url, got => $('#loaderS').textContent = mb(got));
+  let records;
+  if (isXlsx) {
+    $('#loaderS').textContent = 'Reading the spreadsheet. Large files take a few seconds.';
+    await tick();
+    records = await parseXlsx(await blob.arrayBuffer());
+  } else {
+    $('#loaderS').textContent = 'Reading rows…'; await tick();
+    records = Papa.parse((await blob.text()).replace(/^\uFEFF/, ''), {header:true, skipEmptyLines:true, transformHeader:h => h.trim()}).data;
+  }
+  ingest(records);
+}
+
+function ingest(records){
   S.natAgg = newAgg();
-  for (const d of parsed.data) {
+  for (const d0 of records) {
+    const d = {}; for (const k in d0) d[String(k).trim()] = d0[k];
     const raw = String(d.fipsCode ?? '').trim(); if (!raw) continue;
     const fips = raw.replace(/\.0+$/, '').padStart(12, '0');
-    const r = { fips, cfips: fips.slice(0,5), stateName: (d.state || '').trim(), county: (d.county || '').trim() };
+    const r = { fips, cfips: fips.slice(0,5), stateName: String(d.state ?? '').trim(), county: String(d.county ?? '').trim(), asOf: parseDate(d.asOfDate) };
     NUMS.forEach(k => r[k] = num(d[k]));
     r.sup = r.totalResStructures == null || r.totalResStructures < CONFIG.minHomes;
     S.rows.set(fips, r);
@@ -766,7 +823,8 @@ async function loadCSV(){
     if (!S.countyAgg.has(r.cfips)) S.countyAgg.set(r.cfips, newAgg());
     addAgg(S.countyAgg.get(r.cfips), r); addAgg(S.stateAgg.get(s2), r); addAgg(S.natAgg, r);
   }
-  if (!S.rows.size) throw new Error('The CSV loaded but no rows had a fipsCode. Check the column names.');
+  if (!S.rows.size) throw new Error('The file loaded but no rows had a fipsCode. Check the column names in the first worksheet.');
+  S.asOf = modeDate(S.natAgg.dates);
 }
 
 async function loadStatesTopo(){
@@ -785,11 +843,10 @@ async function loadStatesTopo(){
 
 async function loadStateGeo(st){
   if (S.geo.has(st)) return S.geo.get(st);
-  const url = CONFIG.geojsonUrl(st);
-  const text = await fetchText(url, got => $('#loaderS').textContent = `Downloaded ${(got/1048576).toFixed(1)} MB`);
+  const blob = await fetchBlob(CONFIG.geojsonUrl(st), got => $('#loaderS').textContent = mb(got));
   $('#loaderS').textContent = 'Drawing block groups…';
-  await new Promise(r => setTimeout(r, 20));
-  const fc = JSON.parse(text);
+  await tick();
+  const fc = JSON.parse(await blob.text());
   const isAK = st === 'AK';
   const raw = new Map(), fit = new Map(), countyFit = new Map(); const stateFit = [Infinity,Infinity,-Infinity,-Infinity];
   let missing = 0;
@@ -799,7 +856,7 @@ async function loadStateGeo(st){
     const id = String(p0.GEOID ?? p0.GEOID20 ?? p0.GEOID10 ?? p0.geoid ?? '').replace(/\.0+$/, '').padStart(12, '0');
     const r = S.rows.get(id);
     const p = { GEOID:id, _cty:id.slice(0,5), _has: r ? 1 : 0, _sup: r && r.sup ? 1 : 0 };
-    if (r) NUMS.forEach(k => { if (r[k] != null) p[k] = r[k]; }); else missing++;
+    if (r) RATE_VARS.forEach(k => { if (r[k] != null) p[k] = r[k]; }); else missing++;
     f.properties = p;
     raw.set(id, bboxOf(f.geometry, false));
     const fb = isAK ? bboxOf(f.geometry, true) : raw.get(id);
@@ -815,29 +872,56 @@ async function loadStateGeo(st){
 /* ==================================================================
    Map
 ================================================================== */
-const cartoTiles = name => ['a','b','c','d'].map(s => `https://${s}.basemaps.cartocdn.com/${name}/{z}/{x}/{y}@2x.png`);
-const map = new maplibregl.Map({
-  container:'map',
-  style:{
+function esriStyle(){
+  const t = name => [`https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/${name}/MapServer/tile/{z}/{y}/{x}`];
+  return {
     version:8,
     sources:{
-      base:{type:'raster', tiles:cartoTiles('light_nolabels'), tileSize:256, maxzoom:19,
-        attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>'},
-      labels:{type:'raster', tiles:cartoTiles('light_only_labels'), tileSize:256, maxzoom:19}
+      base:{type:'raster', tiles:t('World_Light_Gray_Base'), tileSize:256, maxzoom:16, attribution:'Esri, HERE, Garmin, © OpenStreetMap contributors'},
+      labels:{type:'raster', tiles:t('World_Light_Gray_Reference'), tileSize:256, maxzoom:16}
     },
     layers:[
       {id:'bg', type:'background', paint:{'background-color':'#eef1f3'}},
-      {id:'base', type:'raster', source:'base', paint:{'raster-saturation':-0.35, 'raster-contrast':-0.05}},
-      {id:'labels', type:'raster', source:'labels', paint:{'raster-opacity':0.9}}
+      {id:'base', type:'raster', source:'base'},
+      {id:'labels', type:'raster', source:'labels'}
     ]
-  },
-  center:[-96.5, 38.6], zoom:3.35, minZoom:2, maxZoom:17,
-  attributionControl:{compact:true}, dragRotate:false, pitchWithRotate:false
-});
-map.touchZoomRotate.disableRotation();
-map.addControl(new maplibregl.NavigationControl({showCompass:false}), 'bottom-right');
-map.addControl(new maplibregl.ScaleControl({unit:'imperial'}), 'bottom-right');
-const mapLoaded = new Promise(r => map.on('load', r));
+  };
+}
+async function getBasemapStyle(){
+  try {
+    const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 6000);
+    const res = await fetch(CONFIG.basemapStyle, {signal:ctl.signal}); clearTimeout(to);
+    if (!res.ok) throw new Error(res.status);
+    const style = await res.json();
+    if (!style.layers || !style.sources) throw new Error('Bad style');
+    return {style, vector:true};
+  } catch (e) {
+    console.warn('OpenFreeMap unavailable, using Esri Light Gray', e);
+    return {style:esriStyle(), vector:false};
+  }
+}
+
+async function createMap(){
+  const {style, vector} = await getBasemapStyle();
+  map = new maplibregl.Map({
+    container:'map', style,
+    center:[-96.5, 38.6], zoom:3.35, minZoom:2, maxZoom:17,
+    attributionControl:{compact:true}, dragRotate:false, pitchWithRotate:false
+  });
+  map.touchZoomRotate.disableRotation();
+  map.addControl(new maplibregl.NavigationControl({showCompass:false}), 'bottom-right');
+  map.addControl(new maplibregl.ScaleControl({unit:'imperial'}), 'bottom-right');
+  await new Promise(r => map.on('load', r));
+  if (vector) {
+    // choropleth goes under the first label layer; labels stay readable on top
+    BEFORE = map.getStyle().layers.find(l => l.type === 'symbol')?.id || null;
+    // quiet the basemap so the data stays the hero
+    map.getStyle().layers.forEach(l => {
+      if (l.type === 'symbol' && l['source-layer'] === 'poi') map.setLayoutProperty(l.id, 'visibility', 'none');
+    });
+  } else BEFORE = 'labels';
+  map._isVector = vector;
+}
 
 function hatchImage(){
   const s = 16, c = document.createElement('canvas'); c.width = c.height = s;
@@ -852,14 +936,25 @@ function addLayers(){
   map.addImage('hatch', hatchImage(), {pixelRatio:2});
   map.addSource('states', {type:'geojson', data:{type:'FeatureCollection', features:[]}, promoteId:'fips'});
   map.addSource('bg', {type:'geojson', data:{type:'FeatureCollection', features:[]}, promoteId:'GEOID', tolerance:0.3});
-  const before = 'labels';
-  map.addLayer({id:'states-fill', type:'fill', source:'states', paint:{'fill-color':C.missing, 'fill-opacity':0.88}}, before);
-  map.addLayer({id:'bg-fill', type:'fill', source:'bg', paint:{'fill-color':C.missing, 'fill-opacity':0.88}}, before);
-  map.addLayer({id:'bg-hatch', type:'fill', source:'bg', filter:['==',['get','_sup'],1], paint:{'fill-pattern':'hatch'}}, before);
-  map.addLayer({id:'bg-line', type:'line', source:'bg', paint:{'line-color':'#ffffff', 'line-opacity':0.7,
-    'line-width':['interpolate',['linear'],['zoom'], 5,0.05, 8,0.3, 11,0.7, 14,1.2]}}, before);
-  map.addLayer({id:'states-line', type:'line', source:'states', paint:{'line-color':'#ffffff', 'line-width':['interpolate',['linear'],['zoom'],3,0.8,8,2]}}, before);
-  map.addLayer({id:'states-focus', type:'line', source:'states', filter:['==',['get','fips'],''], paint:{'line-color':'#15222d', 'line-width':1.4, 'line-opacity':0.7}}, before);
+  const add = (def) => BEFORE ? map.addLayer(def, BEFORE) : map.addLayer(def);
+  add({id:'states-fill', type:'fill', source:'states', paint:{'fill-color':C.missing, 'fill-opacity':0.88}});
+  add({id:'bg-fill', type:'fill', source:'bg', paint:{'fill-color':C.missing, 'fill-opacity':0.88}});
+  add({id:'bg-hatch', type:'fill', source:'bg', filter:['==',['get','_sup'],1], paint:{'fill-pattern':'hatch'}});
+  add({id:'bg-line', type:'line', source:'bg', paint:{'line-color':'#ffffff', 'line-opacity':0.7,
+    'line-width':['interpolate',['linear'],['zoom'], 5,0.05, 8,0.3, 11,0.7, 14,1.2]}});
+  add({id:'states-line', type:'line', source:'states', paint:{'line-color':'#ffffff', 'line-width':['interpolate',['linear'],['zoom'],3,0.8,8,2]}});
+  // When zoomed in, draw major roads faintly above the choropleth for orientation
+  if (map._isVector) {
+    map.getStyle().layers
+      .filter(l => l.type === 'line' && l['source-layer'] === 'transportation' && !/path|minor|service|track|rail/i.test(l.id))
+      .forEach(l => {
+        const c = JSON.parse(JSON.stringify(l)); delete c.metadata;
+        c.id = l.id + '__over'; c.minzoom = Math.max(l.minzoom || 0, CONFIG.roadsAboveDataFromZoom);
+        c.paint = {...(c.paint || {}), 'line-opacity':0.5};
+        try { add(c); } catch (e) { /* skip layers that can't be cloned */ }
+      });
+  }
+  add({id:'states-focus', type:'line', source:'states', filter:['==',['get','fips'],''], paint:{'line-color':'#15222d', 'line-width':1.4, 'line-opacity':0.7}});
   map.addLayer({id:'hover-bg', type:'line', source:'bg', paint:{'line-color':'#15222d', 'line-width':2,
     'line-opacity':['case',['boolean',['feature-state','hover'],false],1,0]}});
   map.addLayer({id:'hover-states', type:'line', source:'states', paint:{'line-color':'#15222d', 'line-width':2,
@@ -890,7 +985,7 @@ function applyOpacity(){
   map.setFilter('states-focus', ['==', ['get','fips'], S.st ? ST[S.st].fips : '']);
 }
 
-let hovered = null; // {src, id}
+let hovered = null;
 function setHover(src, id){
   if (hovered && (hovered.id !== id || hovered.src !== src)) { map.setFeatureState({source:hovered.src, id:hovered.id}, {hover:false}); hovered = null; }
   if (id != null && !hovered) { map.setFeatureState({source:src, id}, {hover:true}); hovered = {src, id}; }
@@ -939,7 +1034,7 @@ function syncSelects(){
   $$('.js-state').forEach(s => s.value = S.st || '');
   $$('.js-county').forEach(s => s.value = S.county || '');
   $('#resetBtn').disabled = !S.st;
-  $('#filterHint').textContent = !S.st ? 'Pick a state to see its block groups.' : S.county ? 'Showing one county. Other block groups are faded.' : 'Pick a county to zoom in.';
+  $('#filterHint').textContent = !S.st ? 'Pick a state, or click one on the map.' : S.county ? 'Showing one county. Other block groups are faded.' : 'Pick a county to zoom in.';
 }
 
 async function selectState(st, {fitView = true} = {}){
@@ -955,7 +1050,7 @@ async function selectState(st, {fitView = true} = {}){
   showLoader(`Loading ${ST[st].name}`, 'Downloading block groups…');
   try {
     const g = await loadStateGeo(st);
-    if (S.st !== st) return; // user moved on
+    if (S.st !== st) return;
     map.getSource('bg').setData(g.fc);
     hideLoader();
     if (fitView) fit(g.stateFit);
@@ -979,12 +1074,12 @@ function selectCounty(c, {fitView = true} = {}){
 ================================================================== */
 function buildMetricList(){
   $('#metrics').innerHTML = METRIC_ORDER.map(k => {
-    const M = METRICS[k], r = RAMPS[M.ramp];
+    const M = METRICS[k];
     return `<label class="metric">
       <input type="radio" name="metric" value="${k}" ${k === S.metric ? 'checked' : ''}>
       <span class="m-title">${esc(M.title)}</span><span class="m-val" data-val="${k}">—</span>
       <span class="m-desc">${esc(M.desc)}</span>
-      <span class="m-ramp" style="background:linear-gradient(90deg,${r.slice(1).join(',')})"></span>
+      <span class="m-ramp" style="background:linear-gradient(90deg,${RAMP.slice(1).join(',')})"></span>
     </label>`;
   }).join('');
   $('#metrics').addEventListener('change', e => { if (e.target.name === 'metric') { S.metric = e.target.value; S.legendLock = null; updateAll(); } });
@@ -996,14 +1091,12 @@ function renderMetricValues(){
 }
 function renderSummary(){
   const a = areaAgg(); if (!a) { $('#summary').innerHTML = ''; return; }
-  const gap = Math.max(0, a.sfha - a.polS);
-  const unit = !S.st ? 'block groups nationwide' : 'block groups';
   $('#summary').innerHTML = `
     <h2>${esc(areaName())}</h2>
-    <p class="sub">${fmtInt(a.n)} ${unit}, ${fmtCompact(a.total)} homes, ${fmtCompact(a.pol)} NFIP policies</p>
+    <p class="sub">${fmtInt(a.n)} block groups${S.st ? '' : ' nationwide'}</p>
     <div class="gap">
-      <span class="gap-n">${fmtCompact(gap)}</span>
-      <p>homes in the high-risk flood zone have no NFIP policy, out of ${fmtCompact(a.sfha)} homes in that zone.</p>
+      <span class="gap-n">${fmtCompact(a.pol)}</span>
+      <p>active NFIP residential contracts as of ${esc(aggDateLabel(a))}: ${fmtCompact(a.polS)} in the SFHA and ${fmtCompact(a.polN)} outside.</p>
     </div>`;
 }
 
@@ -1011,13 +1104,13 @@ function renderSummary(){
    Legend
 ================================================================== */
 function renderLegend(){
-  const M = METRICS[S.metric], b = S.breaks, ramp = rampFor(S.metric, b.length + 1), labels = binLabels(b);
+  const M = METRICS[S.metric], b = S.breaks, ramp = rampFor(b.length + 1), labels = binLabels(b);
   const units = unitsForScale();
   const counts = new Array(b.length + 1).fill(0); let sup = 0, na = 0;
   units.forEach(u => { const k = classOf(u.v, u.sup, b); if (k === 'sup') sup++; else if (k === 'na') na++; else counts[k]++; });
   const max = Math.max(1, ...counts);
   const unit = S.st ? 'block groups' : 'states';
-  $('#lgTitle').textContent = M.legend;
+  $('#lgTitle').textContent = M.title;
   $('#legendMinTitle').textContent = M.title;
   $('#lgSub').textContent = `Number of ${unit} in ${areaName(true)}${S.st ? '' : ', by statewide rate'}. Hover a row to find them on the map.`;
   const key = S.legendLock ?? S.legendHover;
@@ -1029,9 +1122,9 @@ function renderLegend(){
   let html = '';
   for (let i = ramp.length - 1; i >= 0; i--) html += row(i, ramp[i], labels[i], counts[i], counts[i] / max * 100);
   const extras = [];
-  if (S.st) extras.push(row('sup', 'hatch', `Too few homes (under ${CONFIG.minHomes})`, sup, null));
+  if (S.st) extras.push(row('sup', 'hatch', `Fewer than ${CONFIG.minHomes} structures`, sup, null));
   if (!S.st) { if (na) extras.push(row('na', C.missing, 'No data', na, null)); }
-  else if (na || S.metric === 'resPenetrationRateSfha') extras.push(row('na', C.na, S.metric === 'resPenetrationRateSfha' ? 'No homes in the high-risk zone' : 'Not applicable', na, null));
+  else if (na || S.metric === 'resPenetrationRateSfha') extras.push(row('na', C.na, S.metric === 'resPenetrationRateSfha' ? 'No structures in SFHA' : 'Not applicable', na, null));
   if (S.st) { const g = S.geo.get(S.st); if (g && g.missing) extras.push(row('missing', C.missing, 'No NFIP data', null, null)); }
   if (extras.length) html += '<div class="lg-sep"></div>' + extras.join('');
   $('#lgRows').innerHTML = html;
@@ -1076,17 +1169,7 @@ function cmpTrack(v, cAvg, sAvg, color){
   h += `<span class="cmp-dot" style="left:${pos(v)}%;background:${color}"></span></div></div>`;
   return h;
 }
-function sentence(m, r){
-  const out = (r.totalResStructures ?? 0) - (r.totalResStructuresSfha ?? 0);
-  const n = x => `<mark>${fmtInt(x)}</mark>`;
-  switch (m) {
-    case 'resStructuresRateSfha': return `${n(r.totalResStructuresSfha)} of ${n(r.totalResStructures)} homes are in the high-risk flood zone.`;
-    case 'resPenetrationRate': return `${n(r.resContractsInForce)} NFIP policies for ${n(r.totalResStructures)} homes.`;
-    case 'resPenetrationRateSfha': return `${n(r.resContractsInForceSfha)} policies for ${n(r.totalResStructuresSfha)} homes in the high-risk zone.`;
-    case 'resPenetrationRateNonSfha': return `${n(r.resContractsInForceNonSfha)} policies for ${n(out)} homes outside the high-risk zone.`;
-  }
-  return '';
-}
+const SFHA_FOOT = `<div class="card-foot">SFHA: FEMA’s high-risk flood zone (1%-annual-chance floodplain).</div>`;
 function renderCardHTML(id){
   const m = S.metric, M = METRICS[m];
   const r = S.rows.get(id);
@@ -1095,58 +1178,39 @@ function renderCardHTML(id){
   const sName = ST[FIPS2ST[s2]]?.name || r?.stateName || '';
   let h = `<div class="card-head"><div><div class="card-place">${esc(cName)}, ${esc(sName)}</div><div class="card-id">Block group ${fmtGeoid(id)}</div></div>
     <button class="card-x" data-act="close" aria-label="Close details">×</button></div>`;
-  if (!r) return h + `<div class="hero-note"><span>ⓘ</span><span>This block group has no records in the NFIP take-up file.</span></div>`;
+  if (!r) return h + `<div class="hero-note"><span>ⓘ</span><span>This block group has no records in the NFIP takeup file.</span></div>`;
 
-  const total = r.totalResStructures ?? 0, sfha = r.totalResStructuresSfha ?? 0, out = Math.max(0, total - sfha);
-  const v = r[m];
+  const v = r[m], asOf = fmtDate(r.asOf || S.asOf);
   const cR = aggRates(S.countyAgg.get(c5))[m], sR = aggRates(S.stateAgg.get(s2))[m];
 
   if (r.sup) {
-    h += `<div class="hero"><div class="hero-label">${esc(M.title)}</div></div>
+    h += `<div class="hero"><div class="hero-label">${esc(M.title)}</div><p class="hero-asof">As of ${esc(asOf)}</p></div>
       <div class="hero-note"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
-      <span><strong>Percentages hidden.</strong> This block group has ${fmtInt(total)} home${total === 1 ? '' : 's'}, fewer than ${CONFIG.minHomes}, so rates would be unreliable. Counts are shown below.</span></div>`;
+      <span><strong>Rates hidden.</strong> This block group has fewer than ${CONFIG.minHomes} residential structures, too few for a reliable rate. Contract counts are shown below.</span></div>`;
   } else if (v == null) {
     h += `<div class="hero"><div class="hero-label"><span class="hero-sw" style="background:${C.na}"></span>${esc(M.title)}</div>
       <div class="hero-val">n/a</div>
-      <p class="hero-sent">${m === 'resPenetrationRateSfha' ? 'No homes here are in the high-risk flood zone, so this rate doesn’t apply.' : 'This rate isn’t available for this block group.'}</p></div>`;
+      <p class="hero-asof">${m === 'resPenetrationRateSfha' ? 'No residential structures here are in the SFHA, so this rate doesn’t apply.' : 'This rate isn’t available for this block group.'}</p></div>`;
   } else {
     const col = colorOf(v, false);
     h += `<div class="hero"><div class="hero-label"><span class="hero-sw" style="background:${col}"></span>${esc(M.title)}</div>
       <div class="hero-val">${fmtPctFine(v)}</div>
-      <p class="hero-sent">${sentence(m, r)}</p>
-      ${cmpTrack(v, cR, sR, col === RAMPS.water[0] || col === RAMPS.cover[0] ? '#9aa6b0' : col)}</div>`;
+      <p class="hero-asof">As of ${esc(asOf)}</p>
+      ${cmpTrack(v, cR, sR, col === RAMP[0] ? '#9aa6b0' : col)}</div>`;
   }
 
-  // split bar: homes by zone with insured portions
-  if (!r.sup && total > 0) {
-    const zi = sfha ? Math.min(1, (r.resContractsInForceSfha ?? 0) / sfha) : 0;
-    const oi = out ? Math.min(1, (r.resContractsInForceNonSfha ?? 0) / out) : 0;
-    const fz = M.focusSeg === 'z' || M.focusSeg === 'a', fo = M.focusSeg === 'o' || M.focusSeg === 'a';
-    h += `<div class="split-wrap">
-      <div class="split-cap"><span>In high-risk zone: ${fmtInt(sfha)}</span><span>Outside: ${fmtInt(out)}</span></div>
-      <div class="split" role="img" aria-label="${fmtInt(sfha)} homes in the high-risk zone and ${fmtInt(out)} outside; the dark portion of each is insured">
-        ${sfha > 0 ? `<div class="s s-z${fz ? ' focus' : ''}" style="flex:${sfha}"><i style="width:${zi*100}%"></i></div>` : ''}
-        ${out > 0 ? `<div class="s s-o${fo ? ' focus' : ''}" style="flex:${out}"><i style="width:${oi*100}%"></i></div>` : ''}
-      </div>
-      <div class="split-key"><span><b style="background:var(--insured)"></b>Insured</span><span><b style="background:var(--zone)"></b>Uninsured in zone</span><span><b style="background:var(--out)"></b>Uninsured outside</span></div>
-    </div>`;
-  }
-
-  // breakdown table
   const hl = key => key === M.primary ? 'hl-1' : M.secondary.includes(key) ? 'hl-2' : '';
   const colOn = col => (M.primary.endsWith('.' + col) || M.secondary.some(k => k.endsWith('.' + col))) ? ' col-on' : '';
-  const hid = `<span class="muted" title="Hidden: fewer than ${CONFIG.minHomes} homes">hidden</span>`;
+  const hid = `<span class="muted" title="Hidden: fewer than ${CONFIG.minHomes} residential structures">hidden</span>`;
   const pc = x => r.sup ? hid : x == null ? '<span class="muted">n/a</span>' : fmtPctFine(x);
   const cell = (key, col, content) => `<td class="${colOn(col)}"><span class="${hl(key)}">${content}</span></td>`;
-  const shareZ = total ? sfha / total : null, shareO = total ? out / total : null;
   h += `<table class="bt">
-    <thead><tr><th></th><th class="${colOn('z').trim()}">High-risk zone</th><th class="${colOn('o').trim()}">Outside</th><th class="${colOn('a').trim()}">All homes</th></tr></thead>
+    <thead><tr><th></th><th class="${colOn('z').trim()}">In SFHA</th><th class="${colOn('o').trim()}">Outside SFHA</th><th class="${colOn('a').trim()}">All</th></tr></thead>
     <tbody>
-      <tr><th scope="row">Homes</th>${cell('homes.z','z',fmtInt(sfha))}${cell('homes.o','o',fmtInt(out))}${cell('homes.a','a',fmtInt(total))}</tr>
-      <tr><th scope="row">Share of homes</th>${cell('share.z','z',pc(r.resStructuresRateSfha ?? shareZ))}${cell('share.o','o',pc(shareO))}${cell('share.a','a',r.sup ? hid : '100%')}</tr>
-      <tr><th scope="row">NFIP policies</th>${cell('pol.z','z',fmtInt(r.resContractsInForceSfha))}${cell('pol.o','o',fmtInt(r.resContractsInForceNonSfha))}${cell('pol.a','a',fmtInt(r.resContractsInForce))}</tr>
-      <tr><th scope="row">Insured rate</th>${cell('rate.z','z',pc(r.resPenetrationRateSfha))}${cell('rate.o','o',pc(r.resPenetrationRateNonSfha))}${cell('rate.a','a',pc(r.resPenetrationRate))}</tr>
+      <tr><th scope="row">Takeup rate</th>${cell('rate.z','z',pc(r.resPenetrationRateSfha))}${cell('rate.o','o',pc(r.resPenetrationRateNonSfha))}${cell('rate.a','a',pc(r.resPenetrationRate))}</tr>
+      <tr><th scope="row">NFIP contracts</th>${cell('pol.z','z',fmtInt(r.resContractsInForceSfha))}${cell('pol.o','o',fmtInt(r.resContractsInForceNonSfha))}${cell('pol.a','a',fmtInt(r.resContractsInForce))}</tr>
     </tbody></table>`;
+  h += SFHA_FOOT;
   h += `<div class="card-hint">Click the block group to keep these details open.</div>
     <div class="card-actions"><button class="linkbtn" data-act="zoom">Zoom to block group</button><button class="linkbtn" data-act="method">About these numbers</button></div>`;
   return h;
@@ -1156,10 +1220,10 @@ function renderStateCardHTML(fips){
   const name = ST[st]?.name || S.statesFC?.features.find(f => f.properties.fips === fips)?.properties.name || 'Unknown';
   if (!a) return `<div class="card-head"><div><div class="card-place">${esc(name)}</div><div class="card-id">No data in this dashboard</div></div></div>`;
   const v = aggRates(a)[m], nat = aggRates(S.natAgg)[m], col = v == null ? C.na : colorOf(v, false);
-  return `<div class="card-head"><div><div class="card-place">${esc(name)}</div><div class="card-id">${fmtInt(a.n)} block groups, ${fmtCompact(a.total)} homes</div></div></div>
+  return `<div class="card-head"><div><div class="card-place">${esc(name)}</div><div class="card-id">${fmtInt(a.n)} block groups</div></div></div>
     <div class="hero"><div class="hero-label"><span class="hero-sw" style="background:${col}"></span>${esc(M.title)}</div>
     <div class="hero-val">${fmtPctFine(v)}</div>
-    <p class="hero-sent">National rate: ${fmtPctFine(nat)}</p></div>
+    <p class="hero-asof">As of ${esc(aggDateLabel(a))}. National rate: ${fmtPctFine(nat)}</p></div>
     <div class="card-hint">Click to explore ${esc(name)}’s block groups.</div>`;
 }
 function placeCard(pt){
@@ -1183,7 +1247,7 @@ function pin(id){
 }
 function unpin(){
   S.pinned = null; cardFor = null;
-  if (map.getLayer('pin-line')) { map.setFilter('pin-line', ['==', ['get','GEOID'], '']); map.setFilter('pin-halo', ['==', ['get','GEOID'], '']); }
+  if (map && map.getLayer('pin-line')) { map.setFilter('pin-line', ['==', ['get','GEOID'], '']); map.setFilter('pin-halo', ['==', ['get','GEOID'], '']); }
   card.classList.remove('pinned'); card.hidden = true;
 }
 card.addEventListener('click', e => {
@@ -1227,8 +1291,9 @@ function wireSearch(){
   let last = 0;
   form.addEventListener('submit', async e => {
     e.preventDefault();
+    if (!S.ready) { toast('Still loading data. Try again in a moment.'); return; }
     const q = input.value.trim(); if (!q) return;
-    const wait = Math.max(0, 1100 - (Date.now() - last)); if (wait) await new Promise(r => setTimeout(r, wait)); // Nominatim: max 1 request/second
+    const wait = Math.max(0, 1100 - (Date.now() - last)); if (wait) await new Promise(r => setTimeout(r, wait));
     last = Date.now();
     list.hidden = false; list.innerHTML = '<li class="msg">Searching…</li>';
     try {
@@ -1255,13 +1320,13 @@ async function goToPlace(p){
   const iso = a['ISO3166-2-lvl4'] || '';
   const st = iso.startsWith('US-') ? iso.slice(3) : NAME2ST[(a.state || '').toLowerCase()];
   if (!st || !ST[st]) { toast('That place is outside the states covered here.'); return; }
-  const isState = p.addresstype === 'state' || p.type === 'administrative' && p.place_rank <= 8;
+  const isState = p.addresstype === 'state';
   if (st !== S.st) await selectState(st, {fitView:isState});
   if (isState) return;
   const g = S.geo.get(st);
   const hit = g ? findBG(g, lon, lat) : null;
   if (hit && hit.slice(0,5) !== S.county) selectCounty(hit.slice(0,5), {fitView:false});
-  const bb = (p.boundingbox || []).map(Number); // [south, north, west, east]
+  const bb = (p.boundingbox || []).map(Number);
   const span = bb.length === 4 ? Math.max(bb[1] - bb[0], bb[3] - bb[2]) : 0;
   if (span > 0.03) map.fitBounds([[bb[2], bb[0]], [bb[3], bb[1]]], {padding:80, maxZoom:13, duration:dur(1000)});
   else map.flyTo({center:[lon, lat], zoom:15, duration:dur(1200)});
@@ -1278,18 +1343,16 @@ async function goToPlace(p){
 const COLS_BG = [
   {k:'fips', h:'Block group', t:'id', raw:'fipsCode'},
   {k:'county', h:'County', t:'text', raw:'county'},
-  {k:'totalResStructures', h:'Homes', t:'int'},
-  {k:'totalResStructuresSfha', h:'Homes in high-risk zone', t:'int'},
-  {k:'resStructuresRateSfha', h:'Share in high-risk zone', t:'pct'},
-  {k:'resContractsInForce', h:'NFIP policies', t:'int'},
-  {k:'resContractsInForceSfha', h:'Policies in high-risk zone', t:'int'},
-  {k:'resContractsInForceNonSfha', h:'Policies outside', t:'int'},
-  {k:'resPenetrationRate', h:'Insured rate, all homes', t:'pct'},
-  {k:'resPenetrationRateSfha', h:'Insured rate in high-risk zone', t:'pct'},
-  {k:'resPenetrationRateNonSfha', h:'Insured rate outside', t:'pct'}
+  {k:'resPenetrationRate', h:'Takeup rate', t:'pct'},
+  {k:'resPenetrationRateSfha', h:'Takeup rate in SFHA', t:'pct'},
+  {k:'resPenetrationRateNonSfha', h:'Takeup rate outside SFHA', t:'pct'},
+  {k:'resContractsInForce', h:'NFIP contracts', t:'int'},
+  {k:'resContractsInForceSfha', h:'Contracts in SFHA', t:'int'},
+  {k:'resContractsInForceNonSfha', h:'Contracts outside SFHA', t:'int'},
+  {k:'asOf', h:'As of', t:'date', raw:'asOfDate'}
 ];
-const COLS_ST = [{k:'name', h:'State', t:'text', raw:''}, {k:'n', h:'Block groups', t:'int', raw:''}, ...COLS_BG.slice(2)];
-const EXPORT_BG = ['fipsCode','CountyfipsCode','state','county', ...METRIC_ORDER, 'totalResStructures','totalResStructuresSfha','resContractsInForce','resContractsInForceSfha','resContractsInForceNonSfha'];
+const COLS_ST = [{k:'name', h:'State', t:'text', raw:''}, {k:'n', h:'Block groups', t:'int', raw:''}, ...COLS_BG.slice(2, -1), {k:'asOf', h:'As of', t:'datelabel', raw:'asOfDate'}];
+const EXPORT_BG = ['fipsCode','CountyfipsCode','state','county', ...METRIC_ORDER, 'resContractsInForce','resContractsInForceSfha','resContractsInForceNonSfha','asOfDate'];
 
 function tableData(){
   let rows, cols;
@@ -1330,10 +1393,12 @@ function renderTable(){
   const td = (r, c) => {
     const v = r[c.k];
     if (c.t === 'pct') {
-      if (mask && r.sup) return `<td><span class="chip" title="Fewer than ${CONFIG.minHomes} homes">hidden</span></td>`;
+      if (mask && r.sup) return `<td><span class="chip" title="Fewer than ${CONFIG.minHomes} residential structures">hidden</span></td>`;
       return v == null ? '<td class="na">n/a</td>' : `<td>${fmtPctFine(v)}</td>`;
     }
     if (c.t === 'int') return `<td>${fmtInt(v)}</td>`;
+    if (c.t === 'date') return `<td>${fmtDate(v, true)}</td>`;
+    if (c.t === 'datelabel') return `<td>${esc(r.asOfLabel)}</td>`;
     return `<td class="tl">${esc(v)}</td>`;
   };
   $('#dataTable').innerHTML = rows.length
@@ -1362,7 +1427,10 @@ async function openRow(tr){
   if (g) { fit(g.fit.get(id), {maxZoom:15}); map.once('moveend', () => pin(id)); }
 }
 function csvCell(v){ if (v == null) return 'N/A'; const s = String(v); return /[",\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s; }
-function fileSlug(){ return ['NFIP_Residential_Takeup', S.st || 'US', S.county ? areaName(true).replace(/[^A-Za-z0-9]+/g,'-') : '', CONFIG.fileTag].filter(Boolean).join('_'); }
+function fileSlug(){
+  const tag = (S.asOf || '').slice(0,7).replace('-', '');
+  return ['NFIP_Residential_Takeup', S.st || 'US', S.county ? areaName(true).replace(/[^A-Za-z0-9]+/g,'-') : '', tag].filter(Boolean).join('_');
+}
 function download(text, name, type){
   const url = URL.createObjectURL(new Blob([text], {type}));
   const a = Object.assign(document.createElement('a'), {href:url, download:name}); document.body.appendChild(a); a.click(); a.remove();
@@ -1372,13 +1440,13 @@ function downloadCSV(){
   const {rows} = tableData(); const mask = $('#maskChk').checked;
   let out;
   if (!S.st) {
-    const hdr = ['state','blockGroups','totalResStructures','totalResStructuresSfha','resContractsInForce','resContractsInForceSfha','resContractsInForceNonSfha', ...METRIC_ORDER];
-    out = [hdr.join(',')].concat(rows.map(r => [r.name, r.n, r.totalResStructures, r.totalResStructuresSfha, r.resContractsInForce, r.resContractsInForceSfha, r.resContractsInForceNonSfha, ...METRIC_ORDER.map(k => r[k])].map(csvCell).join(',')));
+    const hdr = ['state','blockGroups', ...METRIC_ORDER, 'resContractsInForce','resContractsInForceSfha','resContractsInForceNonSfha','asOfDate'];
+    out = [hdr.join(',')].concat(rows.map(r => [r.name, r.n, ...METRIC_ORDER.map(k => r[k]), r.resContractsInForce, r.resContractsInForceSfha, r.resContractsInForceNonSfha, r.asOf].map(csvCell).join(',')));
   } else {
     const hdr = [...EXPORT_BG, 'ratesSuppressed'];
     out = [hdr.join(',')].concat(rows.map(r => [r.fips, r.cfips, r.stateName, r.county,
       ...METRIC_ORDER.map(k => (mask && r.sup) ? 'suppressed' : r[k]),
-      r.totalResStructures, r.totalResStructuresSfha, r.resContractsInForce, r.resContractsInForceSfha, r.resContractsInForceNonSfha,
+      r.resContractsInForce, r.resContractsInForceSfha, r.resContractsInForceNonSfha, r.asOf,
       r.sup ? 'TRUE' : 'FALSE'].map(csvCell).join(',')));
   }
   download(out.join('\n'), fileSlug() + '.csv', 'text/csv;charset=utf-8');
@@ -1389,7 +1457,12 @@ function downloadGeo(){
   const mask = $('#maskChk').checked, q = T.q.toLowerCase();
   const feats = g.fc.features.filter(f => (!S.county || f.properties._cty === S.county) && (!q || f.properties.GEOID.includes(q) || (S.rows.get(f.properties.GEOID)?.county || '').toLowerCase().includes(q))).map(f => {
     const r = S.rows.get(f.properties.GEOID); const p = {GEOID:f.properties.GEOID};
-    if (r) { p.county = r.county; p.state = r.stateName; NUMS.forEach(k => p[k] = (mask && r.sup && RATE_VARS.includes(k)) ? null : r[k]); p.ratesSuppressed = r.sup; }
+    if (r) {
+      p.county = r.county; p.state = r.stateName;
+      RATE_VARS.forEach(k => p[k] = (mask && r.sup) ? null : r[k]);
+      ['resContractsInForce','resContractsInForceSfha','resContractsInForceNonSfha'].forEach(k => p[k] = r[k]);
+      p.asOfDate = r.asOf; p.ratesSuppressed = r.sup;
+    }
     return {type:'Feature', properties:p, geometry:f.geometry};
   });
   download(JSON.stringify({type:'FeatureCollection', features:feats}), fileSlug() + '.geojson', 'application/geo+json');
@@ -1403,8 +1476,8 @@ function switchTab(tab){
   S.tab = tab;
   $$('.tabs [role=tab]').forEach(b => { const on = b.dataset.tab === tab; b.setAttribute('aria-selected', on); b.tabIndex = on ? 0 : -1; });
   $$('.tabpanel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + tab));
-  if (tab === 'map') requestAnimationFrame(() => map.resize());
-  if (tab === 'data') renderTable();
+  if (tab === 'map' && map) requestAnimationFrame(() => map.resize());
+  if (tab === 'data' && S.ready) renderTable();
   writeHash();
 }
 function writeHash(){
@@ -1433,7 +1506,7 @@ function updateAll(){
 
 function wireUI(){
   populateStates(); buildMetricList(); wireLegend(); wireSearch(); wireTable();
-  $$('.js-state').forEach(s => s.addEventListener('change', e => { T.page = 0; selectState(e.target.value); }));
+  $$('.js-state').forEach(s => s.addEventListener('change', e => { if (!S.ready) return; T.page = 0; selectState(e.target.value); }));
   $$('.js-county').forEach(s => s.addEventListener('change', e => { T.page = 0; selectCounty(e.target.value); }));
   $('#resetBtn').onclick = () => { if (S.marker) { S.marker.remove(); S.marker = null; } selectState(null); };
   $$('.tabs [role=tab]').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
@@ -1446,9 +1519,12 @@ function wireUI(){
   $('#shareBtn').onclick = async () => { try { await navigator.clipboard.writeText(location.href); toast('Link copied'); } catch { toast('Copy the address bar to share this view'); } };
   $('#filtersToggle').onclick = () => { const o = document.body.classList.toggle('filters-open'); $('#filtersToggle').setAttribute('aria-expanded', o); };
   $$('.js-min').forEach(e => e.textContent = CONFIG.minHomes);
-  $$('.js-asof').forEach(e => e.textContent = CONFIG.dataAsOf);
-  $('#appSub').textContent = `Share of homes with an active NFIP policy, by census block group. Data as of ${CONFIG.dataAsOf}.`;
   $('#defBody').innerHTML = DEFS.map(([v, d, s, plain]) => `<tr><td>${v}${plain ? `<span class="plain">${esc(plain)}</span>` : ''}</td><td>${esc(d)}</td><td>${esc(s)}</td></tr>`).join('');
+}
+function applyAsOf(){
+  const label = aggDateLabel(S.natAgg);
+  $('#appSub').textContent = `By census block group. NFIP contracts active as of ${label}.`;
+  $$('.js-asof').forEach(e => e.textContent = label);
 }
 
 /* ==================================================================
@@ -1456,13 +1532,15 @@ function wireUI(){
 ================================================================== */
 (async function init(){
   wireUI();
+  showLoader('Loading takeup data', 'Starting up');
   try {
-    await Promise.all([loadCSV(), mapLoaded]);
+    await Promise.all([loadData(), createMap()]);
   } catch (e) {
     console.error(e);
-    loaderErr('The take-up data didn’t load', e.message || String(e));
+    loaderErr('The takeup data didn’t load', e.message || String(e));
     return;
   }
+  applyAsOf();
   addLayers(); wireMap();
   await loadStatesTopo();
   S.ready = true;
