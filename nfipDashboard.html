@@ -452,10 +452,10 @@ abbr[title]{text-decoration:underline dotted 1px;text-underline-offset:2px;curso
 
       <h3>Data sources</h3>
       <ul>
-        <li><strong>NFIP contracts:</strong> OpenFEMA dataset <em>FIMA NFIP Redacted Policies, v3</em>. Contracts are counted as active as of the date in the <code>asOfDate</code> field (currently <span class="js-asof">—</span>). <span class="todo">Add download date and the filters you applied (e.g., residential occupancy types).</span></li>
-        <li><strong>Residential structures:</strong> USACE National Structure Inventory (NSI). <span class="todo">Add NSI version and how residential occupancy was defined.</span></li>
-        <li><strong>Flood zones:</strong> FEMA National Flood Hazard Layer (NFHL). <span class="todo">Add extraction date and which zones count as SFHA (e.g., A, AE, AH, AO, AR, A99, V, VE).</span></li>
-        <li><strong>Boundaries:</strong> Census block groups. <span class="todo">Add vintage (2010 or 2020) and source (TIGER/Line or cartographic boundary files).</span></li>
+        <li><strong>NFIP residential contract-in-force:</strong> OpenFEMA dataset <em>FIMA NFIP Redacted Policies, v3</em>. Contracts are counted as active as of the date in the <code>asOfDate</code> field (currently <span class="js-asof">—</span>).</li>
+        <li><strong>Residential structures:</strong> USACE National Structure Inventory (NSI): 2022 dataset. Residential only.</li>
+        <li><strong>Flood zones:</strong> FEMA National Flood Hazard Layer (NFHL). Special Flood Hazard Areas (SFHAs) are labeled as Zone A, Zone AO, Zone AH, Zones A1-A30, Zone AE, Zone A99, Zone AR, Zone AR/AE, Zone AR/AO, Zone AR/A1-A30, Zone AR/A, Zone V, Zone VE, and Zones V1-V30.</span></li>
+        <li><strong>Boundaries:</strong> Census block groups; 2020 cartographic boundary files from the U.S. Census Bureau.</li>
       </ul>
 
       <h3>How the rates are calculated</h3>
@@ -470,13 +470,13 @@ abbr[title]{text-decoration:underline dotted 1px;text-underline-offset:2px;curso
       <h3>Small numbers</h3>
       <p>Rates are hidden for block groups with fewer than <span class="js-min">5</span> residential structures, because one contract more or less would swing the rate dramatically. These block groups appear on the map with a gray hatch pattern, and their contract counts are still shown. The takeup rate in the SFHA is marked “not applicable” where a block group has no residential structures in the SFHA.</p>
 
-      <h3>Reading the numbers with care</h3>
+      <h3>Important notes:</h3>
       <ul>
-        <li>A contract is not always one structure. A single contract on a multi-unit building can cover several residences, and a structure can carry more than one contract, so rates can occasionally exceed 100%.</li>
-        <li>Structure counts in the NSI are modeled estimates rather than a parcel-by-parcel census.</li>
+        <li>Data for residential properties only.</li>
+        <li>Private flood insurance is not included in these estimates.</li>
+        <li>A contract may cover several units, and a structure can carry more than one contract, so rates can occasionally exceed 100%.</li>
         <li>The SFHA doesn’t capture all flood risk. Many damaging floods happen outside it, and some areas have not been mapped by FEMA.</li>
         <li>The data is a snapshot of contracts in force on one date. Takeup changes as contracts lapse and renew.</li>
-        <li><span class="todo">Add any other caveats, such as geocoding precision of the redacted policy data.</span></li>
       </ul>
 
       <h3>Variable definitions</h3>
@@ -1169,7 +1169,7 @@ function cmpTrack(v, cAvg, sAvg, color){
   h += `<span class="cmp-dot" style="left:${pos(v)}%;background:${color}"></span></div></div>`;
   return h;
 }
-const SFHA_FOOT = `<div class="card-foot">SFHA: FEMA’s high-risk flood zone (1%-annual-chance floodplain).</div>`;
+const SFHA_FOOT = `<div class="card-foot">SFHA: FEMA’s Special Flood Hazard Area, or 100-year floodplain (1%-annual-chance floodplain).</div>`;
 function renderCardHTML(id){
   const m = S.metric, M = METRICS[m];
   const r = S.rows.get(id);
