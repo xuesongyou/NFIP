@@ -1123,25 +1123,29 @@ function addLayers(){
 
 function applyColors(){
   const m = S.metric, step = stepExpr(m, S.breaks);
-  map.setPaintProperty('bg-fill', 'fill-color', ['case',
+  S.bgColor = ['case',
     ['!=', ['get','_has'], 1], C.missing,
     ['==', ['get','_sup'], 1], C.sup,
     ['!', ['has', m]], C.na,
-    step]);
+    step];
   map.setPaintProperty('states-fill', 'fill-color', ['case', ['!', ['has', m]], C.missing, step]);
 }
 function applyOpacity(){
   const m = S.metric, key = S.legendLock ?? S.legendHover;
-  const dims = [];
-  if (S.county) dims.push(['!=', ['get','_cty'], S.county]);
-  if (key != null && S.st) dims.push(['!', matchExpr(key, m, S.breaks, false)]);
-  // selected county is fully opaque so its inner casing lines stay hidden; neighbors fade so the outline reads clearly
-  map.setPaintProperty('bg-fill', 'fill-opacity', dims.length ? ['case', ['any', ...dims], 0.18, S.county ? 1 : 0.9] : 0.9);
-  const cf = ['==', ['get','_cty'], S.county || '__none__'];
-  map.setFilter('county-line', cf); map.setFilter('county-glow', cf);
-  map.setPaintProperty('county-line', 'line-opacity', key != null ? 0.3 : 1);
-  map.setPaintProperty('county-glow', 'line-opacity', key != null ? 0.3 : 1);
-  map.setPaintProperty('bg-hatch', 'fill-opacity', dims.length ? ['case', ['any', ...dims], 0.15, 1] : 1);
+  const hit = (key != null && S.st) ? matchExpr(key, m, S.breaks, false) : null;
+  const inCty = ['==', ['get','_cty'], S.county || '__none__'];
+  if (S.county) {
+    // Inside the selected county, fills stay fully opaque so the county outline drawn beneath them never shows through.
+    // Block groups that don't match the highlighted legend row are washed out with a pale color instead of made transparent.
+    map.setPaintProperty('bg-fill', 'fill-color', hit ? ['case', ['all', inCty, ['!', hit]], '#f9fafb', S.bgColor] : S.bgColor);
+    map.setPaintProperty('bg-fill', 'fill-opacity', ['case', inCty, 1, 0.18]);
+    map.setPaintProperty('bg-hatch', 'fill-opacity', ['case', hit ? ['all', inCty, hit] : inCty, 1, 0.15]);
+  } else {
+    map.setPaintProperty('bg-fill', 'fill-color', S.bgColor);
+    map.setPaintProperty('bg-fill', 'fill-opacity', hit ? ['case', hit, 0.9, 0.18] : 0.9);
+    map.setPaintProperty('bg-hatch', 'fill-opacity', hit ? ['case', hit, 1, 0.15] : 1);
+  }
+  map.setFilter('county-line', inCty); map.setFilter('county-glow', inCty);
   const sKey = !S.st ? key : null;
   map.setPaintProperty('states-fill', 'fill-opacity', sKey != null ? ['case', matchExpr(sKey, m, S.breaks, true), 0.92, 0.2] : 0.88);
   map.setLayoutProperty('states-fill', 'visibility', S.st ? 'none' : 'visible');
