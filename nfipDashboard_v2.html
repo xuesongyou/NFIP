@@ -576,6 +576,7 @@ abbr[title]{text-decoration:underline dotted 1px;text-underline-offset:2px;curso
         NFIP residential takeup rate in SFHA = active NFIP residential contracts in the SFHA ÷ residential structures in the SFHA<br>
         NFIP residential takeup rate outside SFHA = active NFIP residential contracts outside the SFHA ÷ residential structures outside the SFHA
       </div>
+      <p>The takeup rate is marked “not applicable” when the denominator is zero.</p>
       <p>Residential structure counts come from the USACE National Structure Inventory (NSI) 2022. Each structure is assigned to a census block group using Census Bureau boundary files, and to inside or outside the SFHA using the FEMA National Flood Hazard Layer (NFHL). Active NFIP residential contracts come from the OpenFEMA NFIP Redacted Policies - v3 dataset.</p>
       <p>County, state, and national rates on the dashboard are calculated by summing counts across block groups and then dividing, not by averaging block group rates. This weights each area by its number of residential structures.</p>
 
@@ -586,8 +587,12 @@ abbr[title]{text-decoration:underline dotted 1px;text-underline-offset:2px;curso
         <li>NFIP residential contracts that could not be assigned to a census block group are included in state and national takeup rates (and in county rates where the county is known), but do not appear on the block group map or in the block group table.</li>
         <li>The data is a snapshot of NFIP contracts in force on one date. Takeup changes as contracts lapse and renew.</li>
         <li>A NFIP contract may cover several units, but a single residential structure can only be insured by one NFIP building coverage policy.</li>
-        <li>The residential structure data from the USACE National Structure Inventory (NSI) 2022 dataset may be incomplete in some communities. As such, there are cases where a block group has zero residential structures but still has positive numbers of NFIP residential contracts. The takeup rate is marked “not applicable” where a block group has no residential structures, and the rate in or outside the SFHA is marked “not applicable” where there are no residential structures in or outside the SFHA. Block groups with no residential structures are shown in light gray on the map.</li>
         <li>NFIP takeup rates are hidden for block groups with fewer than <span class="js-min">5</span> residential structures, as estimates can be noisy. These block groups appear on the map with a gray hatch pattern, and their contract counts are still shown.</li>
+        <li>The residential structure data from the USACE National Structure Inventory (NSI) 2022 dataset may be incomplete in some communities. As such, there are instances where:</li>
+           <ul>
+               <li>A block group has zero residential structures but still has positive numbers of NFIP residential contracts. In this case, the takeup rate is marked “not applicable,” but their contract counts are still shown.</li>
+               <li>The number of NFIP residential contracts exceeds the number of residential structures. In this case, the takeup rate is set as 100%.</li>
+           </ul>
       </ul>
 
       <h3>Data sources:</h3>
