@@ -496,7 +496,7 @@ abbr[title]{text-decoration:underline dotted 1px;text-underline-offset:2px;curso
    CONFIGURATION: edit paths here to match your repo layout
 ================================================================== */
 const CONFIG = {
-  dataUrl: 'NFIP_Residential_Takeup.xlsx',     // .xlsx or .csv; reads the first worksheet of an .xlsx
+  dataUrl: 'NFIP_Residential_Takeup.csv',     // .xlsx or .csv; reads the first worksheet of an .xlsx
   geojsonUrl: st => `${st}_bg.json`,           // e.g. st => `data/geojson/${st}_bg.json`
   xlsxLib: 'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js',
   statesTopoUrl: 'https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json', // national overview only
