@@ -597,8 +597,18 @@ abbr[title]{text-decoration:underline dotted 1px;text-underline-offset:2px;curso
 
       <h3>Data sources:</h3>
       <ul>
-        <li><strong>NFIP residential contract-in-force:</strong> OpenFEMA dataset <em>NFIP Redacted Policies - v3</em>. Contracts are counted as active as of the date in the <code>asOfDate</code> field (currently <span class="js-asof">—</span>). A contract is considered residential if the occupancy type of the insured structure is coded as one of the following: 1 (Single family residence), 2 (2 to 4 Unit residential building), 3 (Residential building with more than 4 units), 11 (Single-family residential building with the exception of a mobile home or a single residential unit within a multi unit building), 12 (A residential non-condo building with 2, 3, or 4 units seeking insurance on all units), 13 (A residential non-condo building with 5 or more units seeking insurance on all units), 14 (Residential mobile/manufactured home), 15 (Residential condo association seeking coverage on a building with one or more units), or 16 (Single residential unit within a multi-unit building).</li>
-        <li><strong>Residential structures:</strong> USACE National Structure Inventory (NSI) 2022 dataset. Residential only.</li>
+        <li><strong>NFIP residential contract-in-force:</strong> OpenFEMA dataset <em>NFIP Redacted Policies - v3</em>. Contracts are counted as active as of the date in the <code>asOfDate</code> field (currently <span class="js-asof">—</span>). A contract is considered residential if the occupancy type of the insured structure is coded as one of the following:</li>
+           <ul>
+               <li>1 (Single family residence),</li>
+               <li>2 (2 to 4 Unit residential building),</li> 
+               <li>3 (Residential building with more than 4 units),</li>
+               <li>11 (Single-family residential building with the exception of a mobile home or a single residential unit within a multi unit building),</li>
+               <li>12 (A residential non-condo building with 2, 3, or 4 units seeking insurance on all units),</li>
+               <li>13 (A residential non-condo building with 5 or more units seeking insurance on all units),</li>
+               <li>14 (Residential mobile/manufactured home), 15 (Residential condo association seeking coverage on a building with one or more units), or</li>
+               <li>16 (Single residential unit within a multi-unit building).</li>
+           </ul>
+         <li><strong>Residential structures:</strong> USACE National Structure Inventory (NSI) 2022 dataset. Residential only.</li>
         <li><strong>Flood zones:</strong> FEMA National Flood Hazard Layer (NFHL). Special Flood Hazard Areas (SFHAs) are labeled as Zone A, Zone AO, Zone AH, Zones A1-A30, Zone AE, Zone A99, Zone AR, Zone AR/AE, Zone AR/AO, Zone AR/A1-A30, Zone AR/A, Zone V, Zone VE, and Zones V1-V30.</span></li>
         <li><strong>Census block group boundaries:</strong> 2020 cartographic boundary files from the U.S. Census Bureau.</li>
       </ul>
