@@ -774,7 +774,7 @@ function loaderErr(t, s){ $('#loader').hidden = false; $('#loaderBox').classList
 function hideLoader(){ $('#loader').hidden = true; }
 
 /* ---------- aggregation ---------- */
-const newAgg = () => ({n:0,total:0,sfha:0,pol:0,polS:0,polN:0,unPol:0,dates:new Map()});
+const newAgg = (cap = false) => ({n:0,total:0,sfha:0,pol:0,polS:0,polN:0,unPol:0,dates:new Map(),cap});
 // isBG = false for rows with no block group fipsCode: their counts go into the totals, but they aren't counted as block groups
 function addAgg(a, r, isBG = true){
   if (isBG) a.n++; else a.unPol += r.resContractsInForce || 0;
@@ -785,10 +785,11 @@ function addAgg(a, r, isBG = true){
 function aggRates(a){
   if (!a) return {};
   const out = a.total - a.sfha;
+  const f = x => (a.cap && x > 1) ? 1 : x;   // county rates are capped at 100%
   return {
-    resPenetrationRate: a.total > 0 ? a.pol / a.total : null,
-    resPenetrationRateSfha: a.sfha > 0 ? a.polS / a.sfha : null,
-    resPenetrationRateNonSfha: out > 0 ? a.polN / out : null
+    resPenetrationRate: a.total > 0 ? f(a.pol / a.total) : null,
+    resPenetrationRateSfha: a.sfha > 0 ? f(a.polS / a.sfha) : null,
+    resPenetrationRateNonSfha: out > 0 ? f(a.polN / out) : null
   };
 }
 function modeDate(dates){ let best = null, n = -1; dates.forEach((c, d) => { if (c > n || (c === n && d > best)) { best = d; n = c; } }); return best; }
@@ -962,7 +963,7 @@ function ingest(records){
       addAgg(S.stateAgg.get(s2), r, false); addAgg(S.natAgg, r, false);
       const c5 = String(d.CountyfipsCode ?? '').trim().replace(/\.0+$/, '').padStart(5, '0');
       if (/^\d{5}$/.test(c5) && c5.startsWith(s2)) {
-        if (!S.countyAgg.has(c5)) S.countyAgg.set(c5, newAgg());
+                if (!S.countyAgg.has(c5)) S.countyAgg.set(c5, newAgg(true));
         addAgg(S.countyAgg.get(c5), r, false);
       }
       continue;
@@ -977,7 +978,7 @@ function ingest(records){
     ensureState(s2);
     S.byState.get(s2).push(r);
     const cm = S.countiesByState.get(s2); if (!cm.has(r.cfips)) cm.set(r.cfips, r.county || r.cfips);
-    if (!S.countyAgg.has(r.cfips)) S.countyAgg.set(r.cfips, newAgg());
+        if (!S.countyAgg.has(r.cfips)) S.countyAgg.set(r.cfips, newAgg(true));
     addAgg(S.countyAgg.get(r.cfips), r); addAgg(S.stateAgg.get(s2), r); addAgg(S.natAgg, r);
   }
   if (skipped) console.warn(`${skipped} row(s) had neither a block group fipsCode nor a recognizable state, and were left out of all totals.`);
