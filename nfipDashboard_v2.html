@@ -585,7 +585,7 @@ abbr[title]{text-decoration:underline dotted 1px;text-underline-offset:2px;curso
       <p>Residential structure counts come from the USACE National Structure Inventory (NSI) 2022. Each structure is assigned to a census block group using Census Bureau boundary files, and to inside or outside the SFHA using the FEMA National Flood Hazard Layer (NFHL). Active NFIP residential contracts come from the OpenFEMA NFIP Redacted Policies - v3 dataset.</p>
       <p>County, state, and national rates on the dashboard are calculated by summing counts across block groups and then dividing, not by averaging block group rates. This weights each area by its number of residential structures.</p>
 
-      <h3>Important notes:</h3>
+      <h3 id="important-notes">Important notes:</h3>
       <ul>
         <li>Data for residential properties only.</li>
         <li>The estimates do not include private flood insurance since it is not fully collected across all carriers offering the coverage, and the data collected is not shared at a sub-state level.</li>
@@ -1374,7 +1374,9 @@ function renderCardHTML(id){
 
   if (r.none) {
     h += `<div class="hero"><div class="hero-label">${esc(M.title)}</div><p class="hero-asof">As of ${esc(asOf)}</p></div>
-      <div class="hero-note"><span>ⓘ</span><span><strong>Not applicable.</strong> No residential structures are recorded in this block group, so take-up rates don’t apply. Contract counts are shown below.</span></div>`;
+            <div class="hero-note"><span>ⓘ</span><span><strong>Not applicable.</strong> ${(r.resContractsInForce ?? 0) > 0
+        ? `No residential structures are recorded here, yet NFIP contracts are, likely a gap in the NSI structure data. <button class="linkbtn" data-act="notes" style="font-size:inherit">See important notes</button>`
+        : `No residential structures are recorded in this block group, so takeup rates don’t apply.`}</span></div>`;
   } else if (r.sup) {
     h += `<div class="hero"><div class="hero-label">${esc(M.title)}</div><p class="hero-asof">As of ${esc(asOf)}</p></div>
       <div class="hero-note"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
@@ -1447,6 +1449,7 @@ card.addEventListener('click', e => {
   if (a === 'close') unpin();
   if (a === 'zoom' && S.pinned) { const g = S.geo.get(S.st); g && fit(g.fit.get(S.pinned), {maxZoom:15}); }
   if (a === 'method') switchTab('method');
+  if (a === 'notes') { switchTab('method'); requestAnimationFrame(() => document.getElementById('important-notes')?.scrollIntoView({behavior:'smooth', block:'start'})); }
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { unpin(); $('#results').hidden = true; document.body.classList.remove('filters-open'); } });
 
