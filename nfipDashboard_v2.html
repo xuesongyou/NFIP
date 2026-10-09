@@ -1384,7 +1384,9 @@ function renderCardHTML(id){
   } else if (v == null) {
     h += `<div class="hero"><div class="hero-label"><span class="hero-sw" style="background:${C.na}"></span>${esc(M.title)}</div>
       <div class="hero-val">n/a</div>
-      <p class="hero-asof">${NA_TEXT[m]}, so this rate doesn’t apply.</p></div>`;
+        <p class="hero-asof">${m === 'resPenetrationRateSfha' && (r.resContractsInForceSfha ?? 0) > 0
+        ? `No residential structures are recorded in the SFHA here, yet NFIP contracts in the SFHA are, likely a gap in the NSI structure data. <button class="linkbtn" data-act="notes" style="font-size:inherit">See important notes</button>`
+        : `${NA_TEXT[m]}, so this rate doesn’t apply.`}</p></div>`;
   } else {
     const col = colorOf(v, false);
     h += `<div class="hero"><div class="hero-label"><span class="hero-sw" style="background:${col}"></span>${esc(M.title)}</div>
