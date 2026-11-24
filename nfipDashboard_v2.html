@@ -380,6 +380,7 @@ abbr[title]{text-decoration:underline dotted 1px;text-underline-offset:2px;curso
 }
 @media (prefers-reduced-motion:reduce){.landing,.landing-card,.mosaic i{animation:none}}
 </style>
+<script data-goatcounter="https://nfip-takeup.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </head>
 <body>
 
@@ -774,6 +775,10 @@ function parseDate(v){
 const fmtDate = (iso, short) => iso ? new Date(iso + 'T00:00:00Z').toLocaleDateString('en-US', {year:'numeric', month: short ? 'short' : 'long', day:'numeric', timeZone:'UTC'}) : '—';
 function fmtGeoid(id){ return `${id.slice(0,2)} ${id.slice(2,5)} ${id.slice(5,11)} ${id.slice(11)}`; }
 function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(()=>t.classList.remove('show'), 2200); }
+// Usage tracking (GoatCounter). Sends only the event name: never addresses or anything a visitor types.
+function track(name, title){
+  try { if (window.goatcounter && window.goatcounter.count) window.goatcounter.count({ path: name, title: title || name, event: true }); } catch (e) {}
+}
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const dur = ms => reduceMotion ? 0 : ms;
 
@@ -1232,6 +1237,7 @@ function syncSelects(){
 async function selectState(st, {fitView = true} = {}){
   st = st || null;
   if (st && !ST[st]) return;
+  if (st && st !== S.st) track(`state-${st}`, `State: ${ST[st].name}`);
   S.st = st; S.county = null; S.legendLock = null; unpin();
   populateCounties(); syncSelects();
   if (!st) {
@@ -1254,6 +1260,7 @@ async function selectState(st, {fitView = true} = {}){
   updateAll();
 }
 function selectCounty(c, {fitView = true} = {}){
+  if (c && c !== S.county) track(`county-${c}`, `County: ${S.countiesByState.get(c.slice(0,2))?.get(c) || c}, ${ST[FIPS2ST[c.slice(0,2)]]?.name || ''}`);
   S.county = c || null; S.legendLock = null;
   syncSelects();
   const g = S.st && S.geo.get(S.st);
@@ -1274,7 +1281,7 @@ function buildMetricList(){
             <span class="m-ramp" style="background:linear-gradient(90deg,${RAMPS[k].slice(1).join(',')})"></span>
     </label>`;
   }).join('');
-  $('#metrics').addEventListener('change', e => { if (e.target.name === 'metric') { S.metric = e.target.value; S.legendLock = null; updateAll(); } });
+  $('#metrics').addEventListener('change', e => { if (e.target.name === 'metric') { track(`map-${e.target.value}`, `Map option: ${METRICS[e.target.value].title}`); S.metric = e.target.value; S.legendLock = null; updateAll(); } });
 }
 function renderMetricValues(){
   const rates = aggRates(areaAgg());
@@ -1492,7 +1499,8 @@ function wireSearch(){
   form.addEventListener('submit', async e => {
     e.preventDefault();
     if (!S.ready) { toast('Still loading data. Try again in a moment.'); return; }
-    const q = input.value.trim(); if (!q) return;
+     const q = input.value.trim(); if (!q) return;
+     track('address-search', 'Address search');
     const wait = Math.max(0, 1100 - (Date.now() - last)); if (wait) await new Promise(r => setTimeout(r, wait));
     last = Date.now();
     list.hidden = false; list.innerHTML = '<li class="msg">Searching…</li>';
@@ -1636,6 +1644,7 @@ function download(text, name, type){
   setTimeout(() => URL.revokeObjectURL(url), 1500);
 }
 function downloadCSV(){
+  track('download-csv', 'Download CSV');
   const {rows} = tableData(); const mask = $('#maskChk').checked;
   let out;
   if (!S.st) {
