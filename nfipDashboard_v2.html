@@ -233,6 +233,8 @@ mark{background:linear-gradient(transparent 14%,var(--mark) 14%,var(--mark) 90%,
 .data-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:16px}
 .data-head h2{font-family:var(--serif);font-weight:600;font-size:24px;margin:0;line-height:1.2}
 .data-head p{margin:4px 0 0;color:var(--ink-3)}
+.data-head .data-defs{display:flex;align-items:center;gap:7px;margin-top:10px;color:var(--ink-2);font-size:13.5px}
+.data-defs .linkbtn{font-size:inherit}
 .data-filters{display:flex;gap:10px;flex-wrap:wrap}
 .data-filters .select{width:220px}
 .data-bar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
@@ -545,6 +547,7 @@ abbr[title]{text-decoration:underline dotted 1px;text-underline-offset:2px;curso
         <div>
           <h2 id="dataTitle">All states</h2>
           <p id="dataMeta"></p>
+          <p class="data-defs"><svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.4" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 7.2v4M8 4.8v.1" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span>What does each column mean? See the <button class="linkbtn" id="gotoDefs">variable definitions</button> in the Methodology tab.</span></p>
         </div>
         <div class="data-filters">
           <label class="sr-only" for="stateSel2">State</label>
@@ -619,7 +622,7 @@ abbr[title]{text-decoration:underline dotted 1px;text-underline-offset:2px;curso
         <li><strong>Census block group boundaries:</strong> 2020 cartographic boundary files from the U.S. Census Bureau.</li>
       </ul>
        
-      <h3>Variable definitions:</h3>
+      <h3 id="variable-definitions">Variable definitions:</h3>
       <div class="deftable-wrap">
         <table class="def">
           <thead><tr><th>Variable</th><th>Definition</th><th>Data source</th></tr></thead>
@@ -1712,6 +1715,7 @@ function wireUI(){
     const n = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length]; switchTab(n.dataset.tab); n.focus();
   });
   $$('.js-goto-method').forEach(b => b.onclick = () => switchTab('method'));
+    $('#gotoDefs').onclick = () => { switchTab('method'); requestAnimationFrame(() => document.getElementById('variable-definitions')?.scrollIntoView({behavior:'smooth', block:'start'})); };
     $('#shareBtn').onclick = async () => {
     const url = (window.self !== window.top && CONFIG.shareUrl) ? CONFIG.shareUrl + location.hash : location.href;
     try { await navigator.clipboard.writeText(url); toast('Link copied'); } catch { toast('Copy the address bar to share this view'); }
